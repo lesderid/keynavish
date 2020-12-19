@@ -53,6 +53,7 @@ static this()
     registerKeyBinding("c cursorzoom 200 200");
     registerKeyBinding("w windowzoom");
     registerKeyBinding("super+t toggle-start");
+    registerKeyBinding("q quit");
 }
 
 void run()

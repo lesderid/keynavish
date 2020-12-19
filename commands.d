@@ -50,6 +50,13 @@ private void toggleStart()
     else start();
 }
 
+private void quit()
+{
+    import core.sys.windows.windows : ExitProcess;
+
+    ExitProcess(0);
+}
+
 private LONG getCutMoveValue(Direction direction, string arg)
 {
     import std.algorithm : canFind;
@@ -301,6 +308,9 @@ void processCommand(string[] command)
         case "toggle-start":
             toggleStart();
             break;
+        case "quit":
+            quit();
+            break;
         case "ignore":
             break;
         case "warp":
@@ -382,6 +392,7 @@ bool verifyCommand(string[] command)
         case "toggle-start":
         case "warp":
         case "windowzoom":
+        case "quit":
             if (!argCount(0, 0)) return false;
             break;
         case "cut-up":
