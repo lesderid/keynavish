@@ -55,6 +55,12 @@ Nullable!KeyBinding parseKeyBindingString(string bindingString)
         return typeof(return)();
     }
 
+    if (bindingString == "daemonize")
+    {
+        //we ignore this as we (will) use a system tray icon
+        return typeof(return)();
+    }
+
     auto parts = bindingString.findSplit(" ");
 
     string[] keyStrings = parts[0].split('+').assumeWontThrow;
