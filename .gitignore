@@ -2,4 +2,5 @@
 /x64/
 /out/
 /.vs/
+/enc_temp_folder/
 /.dub/
