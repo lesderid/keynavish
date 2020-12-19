@@ -403,9 +403,10 @@ private void changeGrid(string columnsAndRows)
     import std.exception : assumeWontThrow;
 
     auto dimArray = columnsAndRows.split('x').map!(to!int).array.assumeWontThrow;
+
     Grid newGrid = grid;
-    newGrid.rows = dimArray[0];
-    newGrid.columns = dimArray[1];
+    newGrid.columns = dimArray[0];
+    newGrid.rows = dimArray[1];
     grid = newGrid;
 
     redrawWindow();
