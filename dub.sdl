@@ -1,0 +1,11 @@
+name "keynavish"
+description "Control the mouse with the keyboard, on Windows."
+authors "lesderid"
+copyright "Copyright © 2020, Les De Ridder"
+license "GPL-2.0"
+
+libs "User32" "Gdi32"
+
+sourcePaths	"."
+importPaths "."
+targetPath "out"
