@@ -286,6 +286,14 @@ private void doubleClick(string button)
     SendInput(4, inputs.ptr, INPUT.sizeof);
 }
 
+private void runShellCommand(string shellCommand)
+{
+    import std.process : spawnShell;
+    import std.exception : assumeWontThrow;
+
+    spawnShell(shellCommand).assumeWontThrow;
+}
+
 void processCommands(string[][] commands)
 {
     foreach (command; commands)
@@ -357,6 +365,9 @@ void processCommand(string[] command)
         case "move-left":
         case "move-right":
             move(command[0].commandToDirection(), command.length == 2 ? command[1] : null);
+            break;
+        case "sh":
+            runShellCommand(command[1]);
             break;
         default:
             showError("Command not implemented: " ~ command[0]);
@@ -432,6 +443,9 @@ bool verifyCommand(string[] command)
             break;
         case "cursorzoom":
             if (!argCount(2, 2)) return false;
+            break;
+        case "sh":
+            if (!argCount(1, 1)) return false;
             break;
         case "ignore":
             break;

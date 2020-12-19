@@ -55,6 +55,7 @@ static this()
     registerKeyBinding("super+t toggle-start");
     registerKeyBinding("q quit");
     registerKeyBinding("r restart");
+    registerKeyBinding("u sh \"explorer %USERPROFILE%\"");
 }
 
 void run()
