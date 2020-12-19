@@ -21,59 +21,59 @@ bool active;
 static this()
 {
     registerWindowClass();
-	registerKeyboardHook();
+    registerKeyboardHook();
 
-	pen = CreatePen(PS_SOLID, penWidth, penColour);
+    pen = CreatePen(PS_SOLID, penWidth, penColour);
 
-	auto rootDeviceContext = GetDC(null);
-	screenWidth = GetDeviceCaps(rootDeviceContext, HORZRES);
-	screenHeight = GetDeviceCaps(rootDeviceContext, VERTRES);
+    auto rootDeviceContext = GetDC(null);
+    screenWidth = GetDeviceCaps(rootDeviceContext, HORZRES);
+    screenHeight = GetDeviceCaps(rootDeviceContext, VERTRES);
 
     registerKeyBinding("ctrl+semicolon start #start on ctrl+;");
-	registerKeyBinding("Escape end #end on esc");
-	registerKeyBinding("Left cut-left");
-	registerKeyBinding("Down cut-down");
-	registerKeyBinding("Up cut-up");
-	registerKeyBinding("Right cut-right");
-	registerKeyBinding("shift+Left move-left");
-	registerKeyBinding("shift+Down move-down");
-	registerKeyBinding("shift+Up move-up");
-	registerKeyBinding("shift+Right move-right");
-	registerKeyBinding("y cut-left,cut-up");
-	registerKeyBinding("space warp,click 1,end");
-	registerKeyBinding("alt+space warp,click 2,end");
-	registerKeyBinding("shift+space warp,click 3,end");
-	registerKeyBinding("semicolon warp,end");
+    registerKeyBinding("Escape end #end on esc");
+    registerKeyBinding("Left cut-left");
+    registerKeyBinding("Down cut-down");
+    registerKeyBinding("Up cut-up");
+    registerKeyBinding("Right cut-right");
+    registerKeyBinding("shift+Left move-left");
+    registerKeyBinding("shift+Down move-down");
+    registerKeyBinding("shift+Up move-up");
+    registerKeyBinding("shift+Right move-right");
+    registerKeyBinding("y cut-left,cut-up");
+    registerKeyBinding("space warp,click 1,end");
+    registerKeyBinding("alt+space warp,click 2,end");
+    registerKeyBinding("shift+space warp,click 3,end");
+    registerKeyBinding("semicolon warp,end");
 }
 
 void run()
 {
-	createWindow();
+    createWindow();
 
-	resetGrid();
+    resetGrid();
 
-	MSG msg;
-	while (GetMessage(&msg, null, 0, 0))
-	{
-		DispatchMessage(&msg);
-	}
+    MSG msg;
+    while (GetMessage(&msg, null, 0, 0))
+    {
+        DispatchMessage(&msg);
+    }
 }
 
 void registerWindowClass()
 {
-	WNDCLASSEX windowsClassEx;
-	windowsClassEx.style = CS_HREDRAW | CS_VREDRAW;
-	windowsClassEx.lpfnWndProc = &windowProc;
-	windowsClassEx.hInstance = GetModuleHandle(null);
-	windowsClassEx.hbrBackground = CreateSolidBrush(windowColourKey);
-	windowsClassEx.lpszClassName = windowClassName.ptr;
+    WNDCLASSEX windowsClassEx;
+    windowsClassEx.style = CS_HREDRAW | CS_VREDRAW;
+    windowsClassEx.lpfnWndProc = &windowProc;
+    windowsClassEx.hInstance = GetModuleHandle(null);
+    windowsClassEx.hbrBackground = CreateSolidBrush(windowColourKey);
+    windowsClassEx.lpszClassName = windowClassName.ptr;
 
-	RegisterClassEx(&windowsClassEx);
+    RegisterClassEx(&windowsClassEx);
 }
 
 void createWindow()
 {
-	windowHandle = CreateWindowEx(WS_EX_LAYERED | WS_EX_TOOLWINDOW,
+    windowHandle = CreateWindowEx(WS_EX_LAYERED | WS_EX_TOOLWINDOW,
                                   windowClassName.ptr,
                                   "keynavish"w.ptr,
                                   WS_POPUP,
@@ -86,69 +86,69 @@ void createWindow()
                                   GetModuleHandle(null),
                                   null);
 
-	SetLayeredWindowAttributes(windowHandle, windowColourKey, 0, LWA_COLORKEY);
-	SetWindowPos(windowHandle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+    SetLayeredWindowAttributes(windowHandle, windowColourKey, 0, LWA_COLORKEY);
+    SetWindowPos(windowHandle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 }
 
 void showWindow()
 {
-	active = true;
+    active = true;
 
-	ShowWindow(windowHandle, SW_SHOW);
-	UpdateWindow(windowHandle);
+    ShowWindow(windowHandle, SW_SHOW);
+    UpdateWindow(windowHandle);
 }
 
 void hideWindow()
 {
-	active = false;
+    active = false;
 
-	ShowWindow(windowHandle, SW_HIDE);
-	UpdateWindow(windowHandle);
+    ShowWindow(windowHandle, SW_HIDE);
+    UpdateWindow(windowHandle);
 }
 
 void resetGrid()
 {
-	gridRect = RECT(0, 0, screenWidth, screenHeight);
+    gridRect = RECT(0, 0, screenWidth, screenHeight);
 }
 
 void paintGrid(HDC deviceContext)
 {
-	SelectObject(deviceContext, pen);
+    SelectObject(deviceContext, pen);
 
-	auto x = gridRect.left;
-	auto y = gridRect.top;
-	auto w = gridRect.width / 2;
-	auto h = gridRect.height / 2;
+    auto x = gridRect.left;
+    auto y = gridRect.top;
+    auto w = gridRect.width / 2;
+    auto h = gridRect.height / 2;
 
-	//clockwise
-	POINT[] points = [
-		{x, y}, {x + w, y}, {x + w, y + h}, {x, y + h}, {x, y},
-		{x + w, y}, {x + 2 * w, y}, {x + 2 * w, y + h}, {x + w, y + h}, {x + w, y},
-		{x + w, y + h}, {x + 2 * w, y + h}, {x + 2 * w, y + 2 * h}, {x + w, y + 2 * h}, {x + w, y + h},
-		{x, y + h}, {x + w, y + h}, {x + w, y + 2 * h}, {x, y + 2 * h}, {x, y + h},
+    //clockwise
+    POINT[] points = [
+        {x, y}, {x + w, y}, {x + w, y + h}, {x, y + h}, {x, y},
+        {x + w, y}, {x + 2 * w, y}, {x + 2 * w, y + h}, {x + w, y + h}, {x + w, y},
+        {x + w, y + h}, {x + 2 * w, y + h}, {x + 2 * w, y + 2 * h}, {x + w, y + 2 * h}, {x + w, y + h},
+        {x, y + h}, {x + w, y + h}, {x + w, y + 2 * h}, {x, y + 2 * h}, {x, y + h},
     ];
-	DWORD[] sizes = [5, 5, 5, 5];
-	PolyPolyline(deviceContext, points.ptr, sizes.ptr, 4);
+    DWORD[] sizes = [5, 5, 5, 5];
+    PolyPolyline(deviceContext, points.ptr, sizes.ptr, 4);
 }
 
 extern(Windows)
 LRESULT windowProc(HWND handle, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	assert(handle == windowHandle || windowHandle == null);
+    assert(handle == windowHandle || windowHandle == null);
 
-	switch (message)
-	{
-		case WM_PAINT:			
-			PAINTSTRUCT ps;
-			auto deviceContext = BeginPaint(handle, &ps);
-			paintGrid(deviceContext);
-			EndPaint(handle, &ps);			
-			break;
-		case WM_DESTROY:
-			PostQuitMessage(0);
-			break;
-		default:
-			return DefWindowProc(handle, message, wParam, lParam);
-	}
-	return 0;
+    switch (message)
+    {
+        case WM_PAINT:
+            PAINTSTRUCT ps;
+            auto deviceContext = BeginPaint(handle, &ps);
+            paintGrid(deviceContext);
+            EndPaint(handle, &ps);
+            break;
+        case WM_DESTROY:
+            PostQuitMessage(0);
+            break;
+        default:
+            return DefWindowProc(handle, message, wParam, lParam);
+    }
+    return 0;
 }
