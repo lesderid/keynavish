@@ -25,6 +25,13 @@ is a bug.
 
 Currently only basic functionality is implemented.
 
+## Known issues
+
+* Not DPI aware
+* Most likely doesn't work with multiple displays
+
+Pull requests or issues with more information are very welcome.
+
 ## License
 
 keynavish is licensed under the [GNU GPLv2](/LICENSE).

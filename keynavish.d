@@ -48,6 +48,7 @@ static this()
     registerKeyBinding("semicolon warp,end");
     registerKeyBinding("period warp,end");
     registerKeyBinding("c cursorzoom 200 200");
+    registerKeyBinding("w windowzoom");
 }
 
 void run()
@@ -77,7 +78,7 @@ void registerWindowClass()
 
 void createWindow()
 {
-    windowHandle = CreateWindowEx(WS_EX_LAYERED | WS_EX_TOOLWINDOW,
+    windowHandle = CreateWindowEx(WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
                                   windowClassName.ptr,
                                   "keynavish"w.ptr,
                                   WS_POPUP,

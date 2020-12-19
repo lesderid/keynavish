@@ -183,6 +183,17 @@ private void cursorZoom(int width, int height)
     showWindow();
 }
 
+private void windowZoom()
+{
+    import core.sys.windows.windows : GetForegroundWindow, GetWindowRect;
+
+    GetWindowRect(GetForegroundWindow(), &gridRect);
+
+    //HACK: We should redraw somehow (RedrawWidnow with RDW_INVALIDATE | RDW_UPDATENOW doesn't remove old grid)
+    hideWindow();
+    showWindow();
+}
+
 private void click(string button)
 {
     import core.sys.windows.winuser;
@@ -256,6 +267,9 @@ void processCommand(string[] command)
         case "warp":
             warp();
             break;
+        case "windowzoom":
+            windowZoom();
+            break;
         case "click":
             click(command[1]);
             break;
@@ -324,6 +338,7 @@ bool verifyCommand(string[] command)
         case "start":
         case "end":
         case "warp":
+        case "windowzoom":
             if (!argCount(0, 0)) return false;
             break;
         case "cut-up":
