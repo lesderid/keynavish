@@ -26,6 +26,13 @@ Direction commandToDirection(string commandString)
     }
 }
 
+private void redrawWindow()
+{
+    //HACK: We should redraw properly somehow (RedrawWindow with RDW_INVALIDATE | RDW_UPDATENOW doesn't remove old grid)
+    hideWindow();
+    showWindow();
+}
+
 private void start()
 {
     showWindow();
@@ -91,9 +98,7 @@ private void cut(Direction direction, string arg)
             break;
     }
 
-    //HACK: We should redraw somehow (RedrawWidnow with RDW_INVALIDATE | RDW_UPDATENOW doesn't remove old grid)
-    hideWindow();
-    showWindow();
+    redrawWindow();
 
     if (gridRect.height < 2 || gridRect.width < 2)
     {
@@ -148,9 +153,7 @@ private void move(Direction direction, string arg)
             break;
     }
 
-    //HACK: We should redraw somehow (RedrawWidnow with RDW_INVALIDATE | RDW_UPDATENOW doesn't remove old grid)
-    hideWindow();
-    showWindow();
+    redrawWindow();
 }
 
 private void warp()
@@ -178,9 +181,7 @@ private void cursorZoom(int width, int height)
     gridRect.top = cursorPosition.y - height / 2;
     gridRect.bottom = cursorPosition.y + height / 2;
 
-    //HACK: We should redraw somehow (RedrawWidnow with RDW_INVALIDATE | RDW_UPDATENOW doesn't remove old grid)
-    hideWindow();
-    showWindow();
+    redrawWindow();
 }
 
 private void windowZoom()
@@ -189,9 +190,7 @@ private void windowZoom()
 
     GetWindowRect(GetForegroundWindow(), &gridRect);
 
-    //HACK: We should redraw somehow (RedrawWidnow with RDW_INVALIDATE | RDW_UPDATENOW doesn't remove old grid)
-    hideWindow();
-    showWindow();
+    redrawWindow();
 }
 
 private void click(string button)
@@ -222,10 +221,7 @@ private void click(string button)
             break;
     }
 
-    //HACK: We hide the window and show it again because it's always on top
-    hideWindow();
     SendInput(2, inputs.ptr, INPUT.sizeof);
-    showWindow();
 }
 
 void processCommands(string[][] commands)
