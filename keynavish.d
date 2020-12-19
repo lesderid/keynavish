@@ -47,6 +47,7 @@ static this()
     registerKeyBinding("shift+space warp,click 3,end");
     registerKeyBinding("semicolon warp,end");
     registerKeyBinding("period warp,end");
+    registerKeyBinding("c cursorzoom 200 200");
 }
 
 void run()

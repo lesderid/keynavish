@@ -153,7 +153,7 @@ private void move(Direction direction, string arg)
     showWindow();
 }
 
-void warp()
+private void warp()
 {
     import core.sys.windows.windows : SetCursorPos;
 
@@ -165,7 +165,25 @@ void warp()
     SetCursorPos(middleX, middleY);
 }
 
-void click(string button)
+private void cursorZoom(int width, int height)
+{
+    import core.sys.windows.windows : POINT, GetCursorPos;
+
+    POINT cursorPosition;
+
+    assert(GetCursorPos(&cursorPosition));
+
+    gridRect.left = cursorPosition.x - width / 2;
+    gridRect.right = cursorPosition.x + width / 2;
+    gridRect.top = cursorPosition.y - height / 2;
+    gridRect.bottom = cursorPosition.y + height / 2;
+
+    //HACK: We should redraw somehow (RedrawWidnow with RDW_INVALIDATE | RDW_UPDATENOW doesn't remove old grid)
+    hideWindow();
+    showWindow();
+}
+
+private void click(string button)
 {
     import core.sys.windows.winuser;
 
@@ -222,6 +240,9 @@ bool verifyCommands(string[][] commands)
 
 void processCommand(string[] command)
 {
+    import std.conv : to;
+    import std.exception : assumeWontThrow;
+
     switch (command[0])
     {
         case "start":
@@ -237,6 +258,9 @@ void processCommand(string[] command)
             break;
         case "click":
             click(command[1]);
+            break;
+        case "cursorzoom":
+            cursorZoom(command[1].to!int.assumeWontThrow, command[2].to!int.assumeWontThrow);
             break;
         case "cut-up":
         case "cut-down":
@@ -316,6 +340,9 @@ bool verifyCommand(string[] command)
             break;
         case "click":
             if (!argCount(1, 1)) return false;
+            break;
+        case "cursorzoom":
+            if (!argCount(2, 2)) return false;
             break;
         case "ignore":
             break;
