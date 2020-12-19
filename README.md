@@ -23,7 +23,9 @@ over your keynavrc without having to make any changes.
 Any behaviour that differs or any feature that isn't implemented
 is a bug.
 
-Currently only basic functionality is implemented.
+Currently only basic functionality is implemented. More specifically,
+`grid`, `cell-select`, `grid-nav`, `loadconfig`, `record`, `playback`,
+`history-back`, and config file loading aren't implemented yet.
 
 ## Known issues
 
