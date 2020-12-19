@@ -39,6 +39,7 @@ static this()
     registerKeyBinding("ctrl+b warp,drag 1 ctrl");
     registerKeyBinding("shift+b warp,drag 1 shift");
     registerKeyBinding("shift+ctrl+b warp,drag 1 shift+ctrl");
+    registerKeyBinding("a history-back");
 }
 
 enum ModifierKey

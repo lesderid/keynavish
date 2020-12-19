@@ -1,20 +1,43 @@
 module keynavish.grid;
 
 import core.sys.windows.windows : RECT, HDC, HPEN;
+import std.container : SList;
 import keynavish;
 
 @system nothrow:
 
-RECT gridRect;
+private RECT gridRect_;
+private SList!RECT gridRectStack;
 
 HPEN pen;
 
 int screenWidth;
 int screenHeight;
 
+const(RECT) gridRect()
+{
+    return gridRect_;
+}
+
+void gridRect(RECT newRect)
+{
+    if (newRect == gridRect) return;
+
+    gridRectStack.insertFront(gridRect);
+    gridRect_ = newRect;
+}
+
+void tryPopGridRect()
+{
+    if (gridRectStack.empty) return;
+    gridRect_ = gridRectStack.front;
+    gridRectStack.removeFront();
+}
+
 void resetGrid()
 {
-    gridRect = RECT(0, 0, screenWidth, screenHeight);
+    gridRect_ = RECT(0, 0, screenWidth, screenHeight);
+    gridRectStack = typeof(gridRectStack)();
 }
 
 void paintGrid(HDC deviceContext)

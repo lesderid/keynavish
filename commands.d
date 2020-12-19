@@ -102,34 +102,38 @@ private LONG getCutMoveValue(Direction direction, string arg)
 
 private void cut(Direction direction, string arg)
 {
+    import core.sys.windows.windows : RECT;
+
     if (!active) return;
 
     auto value = getCutMoveValue(direction, arg != null ? arg : "0.5");
     auto diff = (direction == Direction.up || direction == Direction.down) ? gridRect.height - value : gridRect.width - value;
 
+    RECT newRect = gridRect;
     final switch (direction) with (Direction)
     {
         case up:
-            gridRect.bottom -= diff;
-            if (gridRect.bottom < 0) gridRect.bottom = 0;
+            newRect.bottom -= diff;
+            if (newRect.bottom < 0) newRect.bottom = 0;
             break;
         case down:
-            gridRect.top += diff;
-            if (gridRect.top < 0) gridRect.top = 0;
+            newRect.top += diff;
+            if (newRect.top < 0) newRect.top = 0;
             break;
         case left:
-            gridRect.right -= diff;
-            if (gridRect.right < 0) gridRect.right = 0;
+            newRect.right -= diff;
+            if (newRect.right < 0) newRect.right = 0;
             break;
         case right:
-            gridRect.left += diff;
-            if (gridRect.left < 0) gridRect.left = 0;
+            newRect.left += diff;
+            if (newRect.left < 0) newRect.left = 0;
             break;
     }
 
+    gridRect = newRect;
     redrawWindow();
 
-    if (gridRect.height < 2 || gridRect.width < 2)
+    if (newRect.height < 2 || newRect.width < 2)
     {
         resetGrid();
         hideWindow();
@@ -138,49 +142,54 @@ private void cut(Direction direction, string arg)
 
 private void move(Direction direction, string arg)
 {
+    import core.sys.windows.windows : RECT;
+
     if (!active) return;
 
     auto value = getCutMoveValue(direction, arg != null ? arg : "1");
 
+    RECT newRect = gridRect;
     final switch (direction) with (Direction)
     {
         case up:
-            gridRect.top -= value;
-            gridRect.bottom -= value;
-            if (gridRect.top < 0)
+            newRect.top -= value;
+            newRect.bottom -= value;
+            if (newRect.top < 0)
             {
-                gridRect.bottom -= gridRect.top;
-                gridRect.top = 0;
+                newRect.bottom -= newRect.top;
+                newRect.top = 0;
             }
             break;
         case down:
-            gridRect.top += value;
-            gridRect.bottom += value;
-            if (gridRect.bottom > screenHeight)
+            newRect.top += value;
+            newRect.bottom += value;
+            if (newRect.bottom > screenHeight)
             {
-                gridRect.top -= (gridRect.bottom - screenHeight);
-                gridRect.bottom = screenHeight;
+                newRect.top -= (newRect.bottom - screenHeight);
+                newRect.bottom = screenHeight;
             }
             break;
         case left:
-            gridRect.left -= value;
-            gridRect.right -= value;
-            if (gridRect.left < 0)
+            newRect.left -= value;
+            newRect.right -= value;
+            if (newRect.left < 0)
             {
-                gridRect.right -= gridRect.left;
-                gridRect.left = 0;
+                newRect.right -= newRect.left;
+                newRect.left = 0;
             }
             break;
         case right:
-            gridRect.left += value;
-            gridRect.right += value;
-            if (gridRect.right > screenWidth)
+            newRect.left += value;
+            newRect.right += value;
+            if (newRect.right > screenWidth)
             {
-                gridRect.left -= (gridRect.right - screenWidth);
-                gridRect.right = screenWidth;
+                newRect.left -= (newRect.right - screenWidth);
+                newRect.right = screenWidth;
             }
             break;
     }
+
+    gridRect = newRect;
 
     redrawWindow();
 }
@@ -205,25 +214,29 @@ private void warp()
 
 private void cursorZoom(int width, int height)
 {
-    import core.sys.windows.windows : POINT, GetCursorPos;
+    import core.sys.windows.windows : RECT, POINT, GetCursorPos;
 
     POINT cursorPosition;
 
     assert(GetCursorPos(&cursorPosition));
 
-    gridRect.left = cursorPosition.x - width / 2;
-    gridRect.right = cursorPosition.x + width / 2;
-    gridRect.top = cursorPosition.y - height / 2;
-    gridRect.bottom = cursorPosition.y + height / 2;
+    RECT newRect;
+    newRect.left = cursorPosition.x - width / 2;
+    newRect.right = cursorPosition.x + width / 2;
+    newRect.top = cursorPosition.y - height / 2;
+    newRect.bottom = cursorPosition.y + height / 2;
+    gridRect = newRect;
 
     redrawWindow();
 }
 
 private void windowZoom()
 {
-    import core.sys.windows.windows : GetForegroundWindow, GetWindowRect;
+    import core.sys.windows.windows : RECT, GetForegroundWindow, GetWindowRect;
 
-    GetWindowRect(GetForegroundWindow(), &gridRect);
+    RECT newRect;
+    GetWindowRect(GetForegroundWindow(), &newRect);
+    gridRect = newRect;
 
     redrawWindow();
 }
@@ -375,6 +388,13 @@ private void runShellCommand(string shellCommand)
     spawnShell(shellCommand).assumeWontThrow;
 }
 
+private void historyBack()
+{
+    tryPopGridRect();
+
+    redrawWindow();
+}
+
 void processCommands(string[][] commands)
 {
     foreach (command; commands)
@@ -437,6 +457,9 @@ void processCommand(string[] command)
             break;
         case "cursorzoom":
             cursorZoom(command[1].to!int.assumeWontThrow, command[2].to!int.assumeWontThrow);
+            break;
+        case "history-back":
+            historyBack();
             break;
         case "cut-up":
         case "cut-down":
@@ -505,6 +528,7 @@ bool verifyCommand(string[] command)
         case "toggle-start":
         case "warp":
         case "windowzoom":
+        case "history-back":
         case "quit":
         case "restart":
             if (!argCount(0, 0)) return false;
