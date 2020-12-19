@@ -11,6 +11,8 @@ The project can be compiled with Visual Studio +
 [VisualD](https://rainers.github.io/visuald/) with the supplied solution
 file.
 
+Alternatively, you can build the project with `dub build`.
+
 ## Configuration
 
 TODO
@@ -27,12 +29,14 @@ Currently only basic functionality is implemented. More specifically,
 `grid`, `cell-select`, `grid-nav`, `loadconfig`, `record`, `playback`,
 and config file loading aren't implemented yet.
 
-## Known issues
+## Known issues/bugs
 
 * Not DPI aware
-* Most likely doesn't work with multiple displays
+* Most likely doesn't work properly with multiple displays
+* Some spurious use of `assertWontThrow`
 
-Pull requests or issues with more information are very welcome.
+Pull requests (or issues with more information) would be much
+appreciated.
 
 ## License
 
