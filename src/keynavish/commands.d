@@ -412,6 +412,35 @@ private void changeGrid(string columnsAndRows)
     redrawWindow();
 }
 
+private void cellSelect(string columnsAndRows)
+{
+    import core.sys.windows.windows : RECT;
+    import std.range : split, array;
+    import std.algorithm : map;
+    import std.conv : to;
+    import std.exception : assumeWontThrow;
+
+    auto dimArray = columnsAndRows.split('x').map!(to!int).array.assumeWontThrow;
+
+    auto x = grid.rect.left;
+    auto y = grid.rect.top;
+    auto width = grid.rect.width / grid.columns;
+    auto height = grid.rect.height / grid.rows;
+
+    Grid newGrid = grid;
+    newGrid.rect = RECT(x + (dimArray[0] - 1) * width, y + (dimArray[1] - 1) * height, x + dimArray[0] * width, y + dimArray[1] * height);
+    if (newGrid.rect.height < 2 || newGrid.rect.width < 2)
+    {
+        resetGrid();
+        hideWindow();
+    }
+    else
+    {
+        grid = newGrid;
+        redrawWindow();
+    }
+}
+
 void processCommands(string[][] commands)
 {
     foreach (command; commands)
@@ -480,6 +509,9 @@ void processCommand(string[] command)
             break;
         case "grid":
             changeGrid(command[1]);
+            break;
+        case "cell-select":
+            cellSelect(command[1]);
             break;
         case "cut-up":
         case "cut-down":
@@ -576,6 +608,9 @@ bool verifyCommand(string[] command)
             if (!argCount(2, 2)) return false;
             break;
         case "grid":
+            if (!argCount(1, 1)) return false;
+            break;
+        case "cell-select":
             if (!argCount(1, 1)) return false;
             break;
         case "sh":

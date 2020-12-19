@@ -40,7 +40,13 @@ static this()
     registerKeyBinding("shift+b warp,drag 1 shift");
     registerKeyBinding("shift+ctrl+b warp,drag 1 shift+ctrl");
     registerKeyBinding("a history-back");
-    registerKeyBinding("6 grid 2x3");
+    registerKeyBinding("6 grid 3x2");
+    registerKeyBinding("Insert cell-select 1x1");
+    registerKeyBinding("Home cell-select 2x1");
+    registerKeyBinding("Prior cell-select 3x1");
+    registerKeyBinding("Delete cell-select 1x2");
+    registerKeyBinding("End cell-select 2x2");
+    registerKeyBinding("Next cell-select 3x2");
 }
 
 enum ModifierKey
@@ -180,6 +186,26 @@ Nullable!KeyCombination parseKeyCombination(string[] keyStrings)
                 break;
             case "Down":
                 if (!setVkCode(VK_DOWN)) return typeof(return)();
+                break;
+            case "Insert":
+                if (!setVkCode(VK_INSERT)) return typeof(return)();
+                break;
+            case "Home":
+                if (!setVkCode(VK_HOME)) return typeof(return)();
+                break;
+            case "End":
+                if (!setVkCode(VK_END)) return typeof(return)();
+                break;
+            case "Prior":
+            case "Page_Up":
+                if (!setVkCode(VK_PRIOR)) return typeof(return)();
+                break;
+            case "Next":
+            case "Page_Down":
+                if (!setVkCode(VK_NEXT)) return typeof(return)();
+                break;
+            case "Delete":
+                if (!setVkCode(VK_DELETE)) return typeof(return)();
                 break;
             case "space":
                 if (!setVkCode(VK_SPACE)) return typeof(return)();
