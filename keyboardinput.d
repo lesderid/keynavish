@@ -2,12 +2,44 @@ module keynavish.keyboardinput;
 
 import core.sys.windows.windows;
 import std.typecons : Nullable, BitFlags;
-import keynavish.config;
-import keynavish.errorhandling;
-import keynavish.commands;
-import keynavish.keynavish;
+import keynavish;
 
 @system nothrow:
+
+static this()
+{
+    //TODO: Read keybinds from config file
+    registerKeyBinding("ctrl+semicolon start #start on ctrl+;");
+    registerKeyBinding("ctrl+period start #start on ctrl+. too (for other keyboard layouts)");
+    registerKeyBinding("Escape end #end on esc");
+    registerKeyBinding("Left cut-left");
+    registerKeyBinding("Down cut-down");
+    registerKeyBinding("Up cut-up");
+    registerKeyBinding("Right cut-right");
+    registerKeyBinding("shift+Left move-left");
+    registerKeyBinding("shift+Down move-down");
+    registerKeyBinding("shift+Up move-up");
+    registerKeyBinding("shift+Right move-right");
+    registerKeyBinding("y cut-left,cut-up");
+    registerKeyBinding("space warp,click 1,end");
+    registerKeyBinding("alt+space warp,click 2,end");
+    registerKeyBinding("shift+space warp,click 3,end");
+    registerKeyBinding("d warp,doubleclick 1,end");
+    registerKeyBinding("alt+d warp,doubleclick 2,end");
+    registerKeyBinding("shift+d warp,doubleclick 3,end");
+    registerKeyBinding("semicolon warp,end");
+    registerKeyBinding("period warp,end");
+    registerKeyBinding("c cursorzoom 200 200");
+    registerKeyBinding("w windowzoom");
+    registerKeyBinding("super+t toggle-start");
+    registerKeyBinding("q quit");
+    registerKeyBinding("r restart");
+    registerKeyBinding("u sh \"explorer %USERPROFILE%\"");
+    registerKeyBinding("b warp,drag 1");
+    registerKeyBinding("ctrl+b warp,drag 1 ctrl");
+    registerKeyBinding("shift+b warp,drag 1 shift");
+    registerKeyBinding("shift+ctrl+b warp,drag 1 shift+ctrl");
+}
 
 enum ModifierKey
 {

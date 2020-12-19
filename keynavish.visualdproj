@@ -496,9 +496,11 @@
   <File path="commands.d" />
   <File path="config.d" />
   <File path="errorhandling.d" />
+  <File path="grid.d" />
   <File path="helpers.d" />
   <File path="keyboardinput.d" />
-  <File path="keynavish.d" />
   <File path="main.d" />
+  <File path="package.d" />
+  <File path="window.d" />
  </Folder>
 </DProject>

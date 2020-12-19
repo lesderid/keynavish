@@ -1,8 +1,7 @@
 module keynavish.commands;
 
-import keynavish.keynavish;
-import keynavish.errorhandling;
-import keynavish.helpers;
+import keynavish;
+
 import core.sys.windows.windows : LONG, DWORD;
 
 @system nothrow:
