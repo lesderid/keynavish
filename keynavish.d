@@ -45,6 +45,9 @@ static this()
     registerKeyBinding("space warp,click 1,end");
     registerKeyBinding("alt+space warp,click 2,end");
     registerKeyBinding("shift+space warp,click 3,end");
+    registerKeyBinding("d warp,doubleclick 1,end");
+    registerKeyBinding("alt+d warp,doubleclick 2,end");
+    registerKeyBinding("shift+d warp,doubleclick 3,end");
     registerKeyBinding("semicolon warp,end");
     registerKeyBinding("period warp,end");
     registerKeyBinding("c cursorzoom 200 200");

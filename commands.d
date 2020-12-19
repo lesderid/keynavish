@@ -224,6 +224,40 @@ private void click(string button)
     SendInput(2, inputs.ptr, INPUT.sizeof);
 }
 
+private void doubleClick(string button)
+{
+    import core.sys.windows.winuser;
+
+    INPUT[4] inputs;
+
+    inputs[0].type = INPUT_MOUSE;
+    inputs[1].type = INPUT_MOUSE;
+
+    switch (button)
+    {
+        case "1":
+            inputs[0].mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
+            inputs[1].mi.dwFlags = MOUSEEVENTF_LEFTUP;
+            break;
+        case "2":
+            inputs[0].mi.dwFlags = MOUSEEVENTF_RIGHTDOWN;
+            inputs[1].mi.dwFlags = MOUSEEVENTF_RIGHTUP;
+            break;
+        case "3":
+            inputs[0].mi.dwFlags = MOUSEEVENTF_MIDDLEDOWN;
+            inputs[1].mi.dwFlags = MOUSEEVENTF_MIDDLEUP;
+            break;
+        default:
+            showError("Invalid mouse button: " ~ button);
+            break;
+    }
+
+    inputs[2] = inputs[0];
+    inputs[3] = inputs[1];
+
+    SendInput(4, inputs.ptr, INPUT.sizeof);
+}
+
 void processCommands(string[][] commands)
 {
     foreach (command; commands)
@@ -268,6 +302,9 @@ void processCommand(string[] command)
             break;
         case "click":
             click(command[1]);
+            break;
+        case "doubleclick":
+            doubleClick(command[1]);
             break;
         case "cursorzoom":
             cursorZoom(command[1].to!int.assumeWontThrow, command[2].to!int.assumeWontThrow);
@@ -350,6 +387,7 @@ bool verifyCommand(string[] command)
             if (!argCount(0, 1)) return false;
             break;
         case "click":
+        case "doubleclick":
             if (!argCount(1, 1)) return false;
             break;
         case "cursorzoom":
