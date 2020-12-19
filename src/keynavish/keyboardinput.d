@@ -8,45 +8,47 @@ import keynavish;
 
 static this()
 {
-    //TODO: Read keybinds from config file
-    registerKeyBinding("ctrl+semicolon start #start on ctrl+;");
-    registerKeyBinding("ctrl+period start #start on ctrl+. too (for other keyboard layouts)");
-    registerKeyBinding("Escape end #end on esc");
-    registerKeyBinding("Left cut-left");
-    registerKeyBinding("Down cut-down");
-    registerKeyBinding("Up cut-up");
-    registerKeyBinding("Right cut-right");
-    registerKeyBinding("shift+Left move-left");
-    registerKeyBinding("shift+Down move-down");
-    registerKeyBinding("shift+Up move-up");
-    registerKeyBinding("shift+Right move-right");
-    registerKeyBinding("y cut-left,cut-up");
-    registerKeyBinding("space warp,click 1,end");
-    registerKeyBinding("alt+space warp,click 2,end");
-    registerKeyBinding("shift+space warp,click 3,end");
-    registerKeyBinding("d warp,doubleclick 1,end");
-    registerKeyBinding("alt+d warp,doubleclick 2,end");
-    registerKeyBinding("shift+d warp,doubleclick 3,end");
-    registerKeyBinding("semicolon warp,end");
-    registerKeyBinding("period warp,end");
-    registerKeyBinding("c cursorzoom 200 200");
-    registerKeyBinding("w windowzoom");
-    registerKeyBinding("super+t toggle-start");
-    registerKeyBinding("q quit");
-    registerKeyBinding("r restart");
-    registerKeyBinding("u sh \"explorer %USERPROFILE%\"");
-    registerKeyBinding("b warp,drag 1");
-    registerKeyBinding("ctrl+b warp,drag 1 ctrl");
-    registerKeyBinding("shift+b warp,drag 1 shift");
-    registerKeyBinding("shift+ctrl+b warp,drag 1 shift+ctrl");
+    registerKeyBinding("clear");
+    registerKeyBinding("ctrl+semicolon start");
+    registerKeyBinding("Escape end");
+    registerKeyBinding("ctrl+bracketleft end");
+    registerKeyBinding("q record ~/.keynav_macros");
+    registerKeyBinding("shift+at playback");
     registerKeyBinding("a history-back");
-    registerKeyBinding("6 grid 3x2");
-    registerKeyBinding("Insert cell-select 1x1");
-    registerKeyBinding("Home cell-select 2x1");
-    registerKeyBinding("Prior cell-select 3x1");
-    registerKeyBinding("Delete cell-select 1x2");
-    registerKeyBinding("End cell-select 2x2");
-    registerKeyBinding("Next cell-select 3x2");
+    registerKeyBinding("h cut-left");
+    registerKeyBinding("j cut-down");
+    registerKeyBinding("k cut-up");
+    registerKeyBinding("l cut-right");
+    registerKeyBinding("shift+h move-left");
+    registerKeyBinding("shift+j move-down");
+    registerKeyBinding("shift+k move-up");
+    registerKeyBinding("shift+l move-right");
+    registerKeyBinding("space warp,click 1,end");
+    registerKeyBinding("Return warp,click 1,end");
+    registerKeyBinding("semicolon warp,end");
+    registerKeyBinding("w warp");
+    registerKeyBinding("t windowzoom");
+    registerKeyBinding("c cursorzoom 300 300");
+    registerKeyBinding("e end");
+    registerKeyBinding("1 click 1");
+    registerKeyBinding("2 click 2");
+    registerKeyBinding("3 click 3");
+    registerKeyBinding("ctrl+h cut-left");
+    registerKeyBinding("ctrl+j cut-down");
+    registerKeyBinding("ctrl+k cut-up");
+    registerKeyBinding("ctrl+l cut-right");
+    registerKeyBinding("y cut-left,cut-up");
+    registerKeyBinding("u cut-right,cut-up");
+    registerKeyBinding("b cut-left,cut-down");
+    registerKeyBinding("n cut-right,cut-down");
+    registerKeyBinding("shift+y move-left,move-up");
+    registerKeyBinding("shift+u move-right,move-up");
+    registerKeyBinding("shift+b move-left,move-down");
+    registerKeyBinding("shift+n move-right,move-down");
+    registerKeyBinding("ctrl+y cut-left,cut-up");
+    registerKeyBinding("ctrl+u cut-right,cut-up");
+    registerKeyBinding("ctrl+b cut-left,cut-down");
+    registerKeyBinding("ctrl+n cut-right,cut-down");
 }
 
 enum ModifierKey
@@ -215,6 +217,9 @@ Nullable!KeyCombination parseKeyCombination(string[] keyStrings)
             case "Delete":
                 if (!setVkCode(VK_DELETE)) return typeof(return)();
                 break;
+            case "Return":
+                if (!setVkCode(VK_RETURN)) return typeof(return)();
+                break;
             case "space":
                 if (!setVkCode(VK_SPACE)) return typeof(return)();
                 break;
@@ -231,7 +236,7 @@ Nullable!KeyCombination parseKeyCombination(string[] keyStrings)
                 if (!setVkCode(VK_OEM_6)) return typeof(return)();
                 break;
             case "at":
-                //HACK: This doesn't have its own vkcode on Windows, but in X11 it has its own keysym
+                //HACK: This doesn't have its own vkcode on Windows, but on X11 it has its own keysym
                 if (!setVkCode('2')) return typeof(return)();
                 break;
             case "a":

@@ -573,6 +573,7 @@ void processCommand(string[] command)
 bool verifyCommand(string[] command)
 {
     //TODO: More command verification (arg types etc.)
+    //TODO: Refactor (with UDAs?)
 
     import std.format : format;
     import std.exception : assumeWontThrow;
