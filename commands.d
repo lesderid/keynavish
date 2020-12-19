@@ -44,6 +44,12 @@ private void end()
     resetGrid();
 }
 
+private void toggleStart()
+{
+    if (active) end();
+    else start();
+}
+
 private LONG getCutMoveValue(Direction direction, string arg)
 {
     import std.algorithm : canFind;
@@ -292,6 +298,9 @@ void processCommand(string[] command)
         case "end":
             end();
             break;
+        case "toggle-start":
+            toggleStart();
+            break;
         case "ignore":
             break;
         case "warp":
@@ -370,6 +379,7 @@ bool verifyCommand(string[] command)
     {
         case "start":
         case "end":
+        case "toggle-start":
         case "warp":
         case "windowzoom":
             if (!argCount(0, 0)) return false;

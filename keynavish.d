@@ -52,6 +52,7 @@ static this()
     registerKeyBinding("period warp,end");
     registerKeyBinding("c cursorzoom 200 200");
     registerKeyBinding("w windowzoom");
+    registerKeyBinding("super+t toggle-start");
 }
 
 void run()

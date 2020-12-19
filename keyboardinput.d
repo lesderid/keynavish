@@ -204,6 +204,11 @@ bool registerKeyBinding(string bindingString)
         {
             regularKeyBindings ~= keyBinding;
         }
+
+        if (keyBinding.commands[0][0] == "toggle-start")
+        {
+            startKeyBindings ~= keyBinding;
+        }
     }
 
     return true;
