@@ -57,6 +57,21 @@ private void quit()
     ExitProcess(0);
 }
 
+private void restart()
+{
+    import core.sys.windows.windows : GetModuleFileName;
+    import std.process : spawnProcess;
+    import std.conv : to;
+    import std.exception : assumeWontThrow;
+
+    wchar[0x7FFF] path;
+    assert(GetModuleFileName(null, path.ptr, path.length));
+
+    spawnProcess(path.to!string).assumeWontThrow;
+
+    quit();
+}
+
 private LONG getCutMoveValue(Direction direction, string arg)
 {
     import std.algorithm : canFind;
@@ -311,6 +326,9 @@ void processCommand(string[] command)
         case "quit":
             quit();
             break;
+        case "restart":
+            restart();
+            break;
         case "ignore":
             break;
         case "warp":
@@ -393,6 +411,7 @@ bool verifyCommand(string[] command)
         case "warp":
         case "windowzoom":
         case "quit":
+        case "restart":
             if (!argCount(0, 0)) return false;
             break;
         case "cut-up":

@@ -54,6 +54,7 @@ static this()
     registerKeyBinding("w windowzoom");
     registerKeyBinding("super+t toggle-start");
     registerKeyBinding("q quit");
+    registerKeyBinding("r restart");
 }
 
 void run()
