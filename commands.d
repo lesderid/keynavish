@@ -3,9 +3,11 @@ module keynavish.commands;
 import keynavish.keynavish;
 import keynavish.errorhandling;
 import keynavish.helpers;
-import core.sys.windows.windows : LONG;
+import core.sys.windows.windows : LONG, DWORD;
 
 @system nothrow:
+
+DWORD draggingFlag;
 
 enum Direction
 {
@@ -187,13 +189,19 @@ private void move(Direction direction, string arg)
 private void warp()
 {
     import core.sys.windows.windows : SetCursorPos;
+    import core.sys.windows.winuser;
 
     if (!active) return;
 
     auto middleX = gridRect.left + gridRect.width / 2;
     auto middleY = gridRect.top + gridRect.height / 2;
 
-    SetCursorPos(middleX, middleY);
+    INPUT input;
+    input.type = INPUT_MOUSE;
+    input.mi.dx = middleX * 65536 / screenWidth;
+    input.mi.dy = middleY * 65536 / screenHeight;
+    input.mi.dwFlags = MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | draggingFlag;
+    SendInput(1, &input, INPUT.sizeof);
 }
 
 private void cursorZoom(int width, int height)
@@ -286,6 +294,80 @@ private void doubleClick(string button)
     SendInput(4, inputs.ptr, INPUT.sizeof);
 }
 
+private void drag(string button, string modifiers)
+{
+    //TODO: Implement modifiers
+
+    import core.sys.windows.windows;
+    import std.string : split;
+    import std.exception : assumeWontThrow;
+
+    static bool dragging = false;
+
+    INPUT mouseInput;
+
+    mouseInput.type = INPUT_MOUSE;
+
+    switch (button)
+    {
+        case "1":
+            mouseInput.mi.dwFlags = !draggingFlag ? MOUSEEVENTF_LEFTDOWN : MOUSEEVENTF_LEFTUP;
+            break;
+        case "2":
+            mouseInput.mi.dwFlags = !draggingFlag ? MOUSEEVENTF_RIGHTDOWN : MOUSEEVENTF_RIGHTUP;
+            break;
+        case "3":
+            mouseInput.mi.dwFlags = !draggingFlag ? MOUSEEVENTF_MIDDLEDOWN : MOUSEEVENTF_MIDDLEUP;
+            break;
+        default:
+            showError("Invalid mouse button: " ~ button);
+            break;
+    }
+
+    if (draggingFlag && modifiers != null)
+    {
+        INPUT[] keyUpInputs;
+        INPUT[] keyDownInputs;
+
+        foreach (modifier; modifiers.split('+').assumeWontThrow)
+        {
+            INPUT keyboardInput;
+            keyboardInput.type = INPUT_KEYBOARD;
+            switch (modifier)
+            {
+                case "ctrl":
+                    keyboardInput.ki.wVk = VK_CONTROL;
+                    break;
+                case "shift":
+                    keyboardInput.ki.wVk = VK_SHIFT;
+                    break;
+                case "alt":
+                    keyboardInput.ki.wVk = VK_MENU;
+                    break;
+                case "super":
+                    keyboardInput.ki.wVk = VK_LWIN;
+                    break;
+                default:
+                    break;
+            }
+
+            keyUpInputs ~= keyboardInput;
+
+            keyboardInput.ki.dwFlags = KEYEVENTF_KEYUP;
+            keyDownInputs ~= keyboardInput;
+        }
+
+        INPUT[] inputs = keyUpInputs ~ [mouseInput] ~ keyDownInputs;
+        SendInput(cast(DWORD) inputs.length, inputs.ptr, INPUT.sizeof);
+    }
+    else
+    {
+        SendInput(1, &mouseInput, INPUT.sizeof);
+    }
+
+    draggingFlag = !draggingFlag ? mouseInput.mi.dwFlags : 0;
+}
+
 private void runShellCommand(string shellCommand)
 {
     import std.process : spawnShell;
@@ -350,6 +432,9 @@ void processCommand(string[] command)
             break;
         case "doubleclick":
             doubleClick(command[1]);
+            break;
+        case "drag":
+            drag(command[1], command.length == 3 ? command[2] : null);
             break;
         case "cursorzoom":
             cursorZoom(command[1].to!int.assumeWontThrow, command[2].to!int.assumeWontThrow);
@@ -440,6 +525,9 @@ bool verifyCommand(string[] command)
         case "click":
         case "doubleclick":
             if (!argCount(1, 1)) return false;
+            break;
+        case "drag":
+            if (!argCount(1, 2)) return false;
             break;
         case "cursorzoom":
             if (!argCount(2, 2)) return false;

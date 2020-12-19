@@ -56,6 +56,10 @@ static this()
     registerKeyBinding("q quit");
     registerKeyBinding("r restart");
     registerKeyBinding("u sh \"explorer %USERPROFILE%\"");
+    registerKeyBinding("b warp,drag 1");
+    registerKeyBinding("ctrl+b warp,drag 1 ctrl");
+    registerKeyBinding("shift+b warp,drag 1 shift");
+    registerKeyBinding("shift+ctrl+b warp,drag 1 shift+ctrl");
 }
 
 void run()
