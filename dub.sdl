@@ -6,6 +6,4 @@ license "GPL-2.0"
 
 libs "User32" "Gdi32"
 
-sourcePaths	"."
-importPaths "."
 targetPath "out"

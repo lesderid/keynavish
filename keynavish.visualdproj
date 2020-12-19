@@ -493,14 +493,18 @@
   <filesToClean>*.obj;*.cmd;*.build;*.json;*.dep;*.tlog</filesToClean>
  </Config>
  <Folder name="keynavish">
-  <File path="commands.d" />
-  <File path="config.d" />
-  <File path="errorhandling.d" />
-  <File path="grid.d" />
-  <File path="helpers.d" />
-  <File path="keyboardinput.d" />
-  <File path="main.d" />
-  <File path="package.d" />
-  <File path="window.d" />
+  <Folder name="src">
+   <Folder name="keynavish">
+    <File path="src\keynavish\commands.d" />
+    <File path="src\keynavish\config.d" />
+    <File path="src\keynavish\errorhandling.d" />
+    <File path="src\keynavish\grid.d" />
+    <File path="src\keynavish\helpers.d" />
+    <File path="src\keynavish\keyboardinput.d" />
+    <File path="src\keynavish\main.d" />
+    <File path="src\keynavish\package.d" />
+    <File path="src\keynavish\window.d" />
+   </Folder>
+  </Folder>
  </Folder>
 </DProject>
