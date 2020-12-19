@@ -40,6 +40,7 @@ static this()
     registerKeyBinding("shift+b warp,drag 1 shift");
     registerKeyBinding("shift+ctrl+b warp,drag 1 shift+ctrl");
     registerKeyBinding("a history-back");
+    registerKeyBinding("6 grid 2x3");
 }
 
 enum ModifierKey
@@ -212,7 +213,19 @@ Nullable!KeyCombination parseKeyCombination(string[] keyStrings)
             case "x":
             case "y":
             case "z":
-                if(!setVkCode(0x41 + (keyString[0] - 'a'))) return typeof(return)();
+                if(!setVkCode('A' + (keyString[0] - 'a'))) return typeof(return)();
+                break;
+            case "0":
+            case "1":
+            case "2":
+            case "3":
+            case "4":
+            case "5":
+            case "6":
+            case "7":
+            case "8":
+            case "9":
+                if (!setVkCode(keyString[0])) return typeof(return)();
                 break;
             default:
                 showError("Unknown key: " ~ keyString);

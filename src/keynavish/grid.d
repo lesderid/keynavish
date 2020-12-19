@@ -6,58 +6,81 @@ import keynavish;
 
 @system nothrow:
 
-private RECT gridRect_;
-private SList!RECT gridRectStack;
+struct Grid
+{
+    RECT rect;
+    int rows;
+    int columns;
+}
+
+private Grid grid_;
+private SList!Grid gridStack;
 
 HPEN pen;
 
 int screenWidth;
 int screenHeight;
 
-const(RECT) gridRect()
+const(Grid) grid()
 {
-    return gridRect_;
+    return grid_;
 }
 
-void gridRect(RECT newRect)
+void grid(Grid newGrid)
 {
-    if (newRect == gridRect) return;
+    if (newGrid == grid) return;
 
-    gridRectStack.insertFront(gridRect);
-    gridRect_ = newRect;
+    gridStack.insertFront(grid);
+    grid_ = newGrid;
 }
 
-void tryPopGridRect()
+void tryPopGrid()
 {
-    if (gridRectStack.empty) return;
-    gridRect_ = gridRectStack.front;
-    gridRectStack.removeFront();
+    if (gridStack.empty) return;
+
+    grid_ = gridStack.front;
+    gridStack.removeFront();
 }
 
 void resetGrid()
 {
-    gridRect_ = RECT(0, 0, screenWidth, screenHeight);
-    gridRectStack = typeof(gridRectStack)();
+    grid_.rect = RECT(0, 0, screenWidth, screenHeight);
+    grid_.rows = 2;
+    grid_.columns = 2;
+    gridStack = typeof(gridStack)();
+}
+
+private const(RECT[]) splitGrid()
+{
+    import std.algorithm : cartesianProduct, map;
+    import std.range : array, iota;
+
+    auto x = grid.rect.left;
+    auto y = grid.rect.top;
+    auto width = grid.rect.width / grid.columns;
+    auto height = grid.rect.height / grid.rows;
+
+    return cartesianProduct(grid.columns.iota, grid.rows.iota).map!(t => t.rename!("x", "y"))
+            .map!(t => RECT(x + t.x * width, y + t.y * height, x + (t.x + 1) * width, y + (t.y + 1) * height))
+            .array;
 }
 
 void paintGrid(HDC deviceContext)
 {
     import core.sys.windows.windows : DWORD, POINT, PolyPolyline, SelectObject;
+    import std.algorithm : map;
+    import std.range : repeat, join, array;
 
     SelectObject(deviceContext, pen);
 
-    auto x = gridRect.left;
-    auto y = gridRect.top;
-    auto w = gridRect.width / 2;
-    auto h = gridRect.height / 2;
+    auto pointArrays = splitGrid.map!(r => [
+        POINT(r.left, r.top),
+        POINT(r.right, r.top),
+        POINT(r.right, r.bottom),
+        POINT(r.left, r.bottom),
+        POINT(r.left, r.top)
+    ]).join;
 
-    //clockwise
-    POINT[] points = [
-        {x, y}, {x + w, y}, {x + w, y + h}, {x, y + h}, {x, y},
-        {x + w, y}, {x + 2 * w, y}, {x + 2 * w, y + h}, {x + w, y + h}, {x + w, y},
-        {x + w, y + h}, {x + 2 * w, y + h}, {x + 2 * w, y + 2 * h}, {x + w, y + 2 * h}, {x + w, y + h},
-        {x, y + h}, {x + w, y + h}, {x + w, y + 2 * h}, {x, y + 2 * h}, {x, y + h},
-    ];
-    DWORD[] sizes = [5, 5, 5, 5];
-    PolyPolyline(deviceContext, points.ptr, sizes.ptr, 4);
+    DWORD[] sizes = uint(5).repeat(pointArrays.length).array;
+    PolyPolyline(deviceContext, pointArrays.ptr, sizes.ptr, grid.columns * grid.rows);
 }

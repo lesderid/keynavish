@@ -84,7 +84,7 @@ private LONG getCutMoveValue(Direction direction, string arg)
         return 0;
     }
 
-    auto original = (direction == Direction.up || direction == Direction.down) ? gridRect.height : gridRect.width;
+    auto original = (direction == Direction.up || direction == Direction.down) ? grid.rect.height : grid.rect.width;
 
     if (arg == "1")
     {
@@ -107,33 +107,33 @@ private void cut(Direction direction, string arg)
     if (!active) return;
 
     auto value = getCutMoveValue(direction, arg != null ? arg : "0.5");
-    auto diff = (direction == Direction.up || direction == Direction.down) ? gridRect.height - value : gridRect.width - value;
+    auto diff = (direction == Direction.up || direction == Direction.down) ? grid.rect.height - value : grid.rect.width - value;
 
-    RECT newRect = gridRect;
+    Grid newGrid = grid;
     final switch (direction) with (Direction)
     {
         case up:
-            newRect.bottom -= diff;
-            if (newRect.bottom < 0) newRect.bottom = 0;
+            newGrid.rect.bottom -= diff;
+            if (newGrid.rect.bottom < 0) newGrid.rect.bottom = 0;
             break;
         case down:
-            newRect.top += diff;
-            if (newRect.top < 0) newRect.top = 0;
+            newGrid.rect.top += diff;
+            if (newGrid.rect.top < 0) newGrid.rect.top = 0;
             break;
         case left:
-            newRect.right -= diff;
-            if (newRect.right < 0) newRect.right = 0;
+            newGrid.rect.right -= diff;
+            if (newGrid.rect.right < 0) newGrid.rect.right = 0;
             break;
         case right:
-            newRect.left += diff;
-            if (newRect.left < 0) newRect.left = 0;
+            newGrid.rect.left += diff;
+            if (newGrid.rect.left < 0) newGrid.rect.left = 0;
             break;
     }
 
-    gridRect = newRect;
+    grid = newGrid;
     redrawWindow();
 
-    if (newRect.height < 2 || newRect.width < 2)
+    if (newGrid.rect.height < 2 || newGrid.rect.width < 2)
     {
         resetGrid();
         hideWindow();
@@ -148,48 +148,48 @@ private void move(Direction direction, string arg)
 
     auto value = getCutMoveValue(direction, arg != null ? arg : "1");
 
-    RECT newRect = gridRect;
+    Grid newGrid = grid;
     final switch (direction) with (Direction)
     {
         case up:
-            newRect.top -= value;
-            newRect.bottom -= value;
-            if (newRect.top < 0)
+            newGrid.rect.top -= value;
+            newGrid.rect.bottom -= value;
+            if (newGrid.rect.top < 0)
             {
-                newRect.bottom -= newRect.top;
-                newRect.top = 0;
+                newGrid.rect.bottom -= newGrid.rect.top;
+                newGrid.rect.top = 0;
             }
             break;
         case down:
-            newRect.top += value;
-            newRect.bottom += value;
-            if (newRect.bottom > screenHeight)
+            newGrid.rect.top += value;
+            newGrid.rect.bottom += value;
+            if (newGrid.rect.bottom > screenHeight)
             {
-                newRect.top -= (newRect.bottom - screenHeight);
-                newRect.bottom = screenHeight;
+                newGrid.rect.top -= (newGrid.rect.bottom - screenHeight);
+                newGrid.rect.bottom = screenHeight;
             }
             break;
         case left:
-            newRect.left -= value;
-            newRect.right -= value;
-            if (newRect.left < 0)
+            newGrid.rect.left -= value;
+            newGrid.rect.right -= value;
+            if (newGrid.rect.left < 0)
             {
-                newRect.right -= newRect.left;
-                newRect.left = 0;
+                newGrid.rect.right -= newGrid.rect.left;
+                newGrid.rect.left = 0;
             }
             break;
         case right:
-            newRect.left += value;
-            newRect.right += value;
-            if (newRect.right > screenWidth)
+            newGrid.rect.left += value;
+            newGrid.rect.right += value;
+            if (newGrid.rect.right > screenWidth)
             {
-                newRect.left -= (newRect.right - screenWidth);
-                newRect.right = screenWidth;
+                newGrid.rect.left -= (newGrid.rect.right - screenWidth);
+                newGrid.rect.right = screenWidth;
             }
             break;
     }
 
-    gridRect = newRect;
+    grid = newGrid;
 
     redrawWindow();
 }
@@ -201,8 +201,8 @@ private void warp()
 
     if (!active) return;
 
-    auto middleX = gridRect.left + gridRect.width / 2;
-    auto middleY = gridRect.top + gridRect.height / 2;
+    auto middleX = grid.rect.left + grid.rect.width / 2;
+    auto middleY = grid.rect.top + grid.rect.height / 2;
 
     INPUT input;
     input.type = INPUT_MOUSE;
@@ -220,12 +220,12 @@ private void cursorZoom(int width, int height)
 
     assert(GetCursorPos(&cursorPosition));
 
-    RECT newRect;
-    newRect.left = cursorPosition.x - width / 2;
-    newRect.right = cursorPosition.x + width / 2;
-    newRect.top = cursorPosition.y - height / 2;
-    newRect.bottom = cursorPosition.y + height / 2;
-    gridRect = newRect;
+    Grid newGrid = grid;
+    newGrid.rect.left = cursorPosition.x - width / 2;
+    newGrid.rect.right = cursorPosition.x + width / 2;
+    newGrid.rect.top = cursorPosition.y - height / 2;
+    newGrid.rect.bottom = cursorPosition.y + height / 2;
+    grid = newGrid;
 
     redrawWindow();
 }
@@ -234,9 +234,9 @@ private void windowZoom()
 {
     import core.sys.windows.windows : RECT, GetForegroundWindow, GetWindowRect;
 
-    RECT newRect;
-    GetWindowRect(GetForegroundWindow(), &newRect);
-    gridRect = newRect;
+    Grid newGrid = grid;
+    GetWindowRect(GetForegroundWindow(), &newGrid.rect);
+    grid = newGrid;
 
     redrawWindow();
 }
@@ -390,7 +390,23 @@ private void runShellCommand(string shellCommand)
 
 private void historyBack()
 {
-    tryPopGridRect();
+    tryPopGrid();
+
+    redrawWindow();
+}
+
+private void changeGrid(string columnsAndRows)
+{
+    import std.range : split, array;
+    import std.algorithm : map;
+    import std.conv : to;
+    import std.exception : assumeWontThrow;
+
+    auto dimArray = columnsAndRows.split('x').map!(to!int).array.assumeWontThrow;
+    Grid newGrid = grid;
+    newGrid.rows = dimArray[0];
+    newGrid.columns = dimArray[1];
+    grid = newGrid;
 
     redrawWindow();
 }
@@ -460,6 +476,9 @@ void processCommand(string[] command)
             break;
         case "history-back":
             historyBack();
+            break;
+        case "grid":
+            changeGrid(command[1]);
             break;
         case "cut-up":
         case "cut-down":
@@ -554,6 +573,9 @@ bool verifyCommand(string[] command)
             break;
         case "cursorzoom":
             if (!argCount(2, 2)) return false;
+            break;
+        case "grid":
+            if (!argCount(1, 1)) return false;
             break;
         case "sh":
             if (!argCount(1, 1)) return false;
