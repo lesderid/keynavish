@@ -244,12 +244,15 @@ LRESULT lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 				else
 				{
                     auto keyBindingRange = regularKeyBindings.find!(b => b.keyCombination == pressedCombination);
-                    if (keyBindingRange.empty) break;
-                    auto keyBinding = keyBindingRange[0];
-					processCommands(keyBinding.commands);
-					return 1;
+                    if (!keyBindingRange.empty)
+					{
+						auto keyBinding = keyBindingRange[0];
+						processCommands(keyBinding.commands);
+					}
+                    return 1;
                 }
-                break;
+
+                return active ? 1 : CallNextHookEx(null, nCode, wParam, lParam);
 			default:
 				break;
 		}

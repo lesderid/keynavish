@@ -29,19 +29,6 @@ static this()
 	screenWidth = GetDeviceCaps(rootDeviceContext, HORZRES);
 	screenHeight = GetDeviceCaps(rootDeviceContext, VERTRES);
 
-	//TODO: Just ignore all keys that aren't bound instead...
-	registerKeyBinding("Super_L ignore");
-	registerKeyBinding("Super_R ignore");
-	registerKeyBinding("ctrl+Escape ignore");
-	registerKeyBinding("super+d ignore");
-	registerKeyBinding("super+m ignore");
-	registerKeyBinding("shift+super+m ignore");
-	registerKeyBinding("ctrl+shift+Escape ignore");
-	registerKeyBinding("alt+Tab ignore");
-	registerKeyBinding("shift+alt+Tab ignore");
-	registerKeyBinding("alt+Escape ignore");
-	registerKeyBinding("shift+alt+Escape ignore");
-
     registerKeyBinding("ctrl+semicolon start #start on ctrl+;");
 	registerKeyBinding("Escape end #end on esc");
 	registerKeyBinding("Left cut-left");
