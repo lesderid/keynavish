@@ -60,6 +60,13 @@ Nullable!KeyBinding parseKeyBindingString(string bindingString)
         //we ignore this as we (will) use a system tray icon
         return typeof(return)();
     }
+    else if (bindingString == "clear")
+    {
+        startKeyBindings = [];
+        regularKeyBindings = [];
+
+        return typeof(return)();
+    }
 
     auto parts = bindingString.findSplit(" ");
 
