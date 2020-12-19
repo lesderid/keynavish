@@ -31,7 +31,7 @@ struct KeyBinding
 }
 
 KeyBinding[] regularKeyBindings;
-KeyBinding startKeyBinding;
+KeyBinding[] startKeyBindings;
 
 void registerKeyboardHook()
 {
@@ -188,7 +188,7 @@ bool registerKeyBinding(string bindingString)
 
     if (keyBinding.commands[0][0] == "start")
     {
-        startKeyBinding = keyBinding;
+        startKeyBindings ~= keyBinding;
     }
     else
     {
@@ -235,9 +235,10 @@ LRESULT lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 
                 if (!active)
                 {
-                    if (startKeyBinding.keyCombination == pressedCombination)
+                    auto keyBindingRange = startKeyBindings.find!(b => b.keyCombination == pressedCombination);
+                    if (!keyBindingRange.empty)
                     {
-                        processCommands(startKeyBinding.commands);
+                        processCommands(keyBindingRange[0].commands);
                         return 1;
                     }
                 }
@@ -246,8 +247,7 @@ LRESULT lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
                     auto keyBindingRange = regularKeyBindings.find!(b => b.keyCombination == pressedCombination);
                     if (!keyBindingRange.empty)
                     {
-                        auto keyBinding = keyBindingRange[0];
-                        processCommands(keyBinding.commands);
+                        processCommands(keyBindingRange[0].commands);
                     }
                     return 1;
                 }

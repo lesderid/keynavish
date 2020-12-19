@@ -29,7 +29,9 @@ static this()
     screenWidth = GetDeviceCaps(rootDeviceContext, HORZRES);
     screenHeight = GetDeviceCaps(rootDeviceContext, VERTRES);
 
+    //TODO: Read keybinds from config file
     registerKeyBinding("ctrl+semicolon start #start on ctrl+;");
+    registerKeyBinding("ctrl+period start #start on ctrl+. too (for other keyboard layouts)");
     registerKeyBinding("Escape end #end on esc");
     registerKeyBinding("Left cut-left");
     registerKeyBinding("Down cut-down");
@@ -44,6 +46,7 @@ static this()
     registerKeyBinding("alt+space warp,click 2,end");
     registerKeyBinding("shift+space warp,click 3,end");
     registerKeyBinding("semicolon warp,end");
+    registerKeyBinding("period warp,end");
 }
 
 void run()
