@@ -80,7 +80,7 @@ void registerKeyboardHook()
 
 Nullable!KeyBinding parseKeyBindingString(string bindingString)
 {
-    import std.algorithm : findSplit, map, until;
+    import std.algorithm : findSplit, map, until, startsWith;
     import std.csv : csvReader, Malformed;
     import std.array : array;
     import std.format : format;
@@ -107,6 +107,13 @@ Nullable!KeyBinding parseKeyBindingString(string bindingString)
 
         return typeof(return)();
     }
+    else if (bindingString.startsWith("loadconfig"))
+    {
+        auto command = bindingString.csvReader!(string, Malformed.ignore)(' ').front.array.assumeWontThrow;
+        verifyCommand(command) && processCommand(command);
+
+        return typeof(return)();
+    }
 
     auto parts = bindingString.findSplit(" ");
 
@@ -114,6 +121,7 @@ Nullable!KeyBinding parseKeyBindingString(string bindingString)
 
     //abusing csvReader so quoted strings are handled properly
     string[][] commands = parts[2].csvReader!(string, Malformed.ignore).front
+                                .map!strip
                                 .map!(c => c.csvReader!(string, Malformed.ignore)(' ').front.array)
                                 .array.assumeWontThrow;
 
@@ -212,6 +220,19 @@ Nullable!KeyCombination parseKeyCombination(string[] keyStrings)
                 break;
             case "period":
                 if (!setVkCode(VK_OEM_PERIOD)) return typeof(return)();
+                break;
+            case "bracketleft":
+                if (!setVkCode(VK_OEM_4)) return typeof(return)();
+                break;
+            case "backslash":
+                if (!setVkCode(VK_OEM_5)) return typeof(return)();
+                break;
+            case "bracketright":
+                if (!setVkCode(VK_OEM_6)) return typeof(return)();
+                break;
+            case "at":
+                //HACK: This doesn't have its own vkcode on Windows, but in X11 it has its own keysym
+                if (!setVkCode('2')) return typeof(return)();
                 break;
             case "a":
             case "b":

@@ -388,6 +388,39 @@ private void runShellCommand(string shellCommand)
     spawnShell(shellCommand).assumeWontThrow;
 }
 
+void loadConfig(string pathString, bool silent = false)
+{
+    import std.file : exists, readText;
+    import std.exception : assumeWontThrow;
+    import std.range : array;
+    import std.conv : to;
+    import std.format : format;
+    import std.array : replace, split;
+
+    string path = pathString.expandPath;
+
+    if (!path.exists)
+    {
+        if (!silent)
+        {
+            if (path == pathString)
+            {
+                showError(format!"Error loading config file: %s does not exist"(path).assumeWontThrow);
+            }
+            else
+            {
+                showError(format!"Error loading config file: %s (expanded to: %s) does not exist"(pathString, path).assumeWontThrow);
+            }
+        }
+        return;
+    }
+
+    foreach (line; path.readText.replace('\r', "").split('\n').assumeWontThrow)
+    {
+        registerKeyBinding(line.to!string.assumeWontThrow);
+    }
+}
+
 private void historyBack()
 {
     tryPopGrid();
@@ -528,6 +561,9 @@ void processCommand(string[] command)
         case "sh":
             runShellCommand(command[1]);
             break;
+        case "loadconfig":
+            loadConfig(command[1]);
+            break;
         default:
             showError("Command not implemented: " ~ command[0]);
             break;
@@ -615,6 +651,15 @@ bool verifyCommand(string[] command)
             break;
         case "sh":
             if (!argCount(1, 1)) return false;
+            break;
+        case "loadconfig":
+            if (!argCount(1, 1)) return false;
+            break;
+        case "record":
+            if (!argCount(0, 1)) return false;
+            break;
+        case "playback":
+            if (!argCount(0, 0)) return false;
             break;
         case "ignore":
             break;

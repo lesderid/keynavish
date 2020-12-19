@@ -10,3 +10,12 @@ void showError(string message, string title = "keynavish")
 
     MessageBox(null, message.to!wstring.assumeWontThrow.ptr, title.to!wstring.assumeWontThrow.ptr, MB_ICONERROR);
 }
+
+void showWarning(string message, string title = "keynavish")
+{
+    import core.sys.windows.windows : MessageBox, MB_ICONWARNING;
+    import std.conv : to;
+    import std.exception : assumeWontThrow;
+
+    MessageBox(null, message.to!wstring.assumeWontThrow.ptr, title.to!wstring.assumeWontThrow.ptr, MB_ICONWARNING);
+}

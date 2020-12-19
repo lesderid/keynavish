@@ -29,8 +29,7 @@ Any behaviour that is different or any feature that isn't implemented is
 a bug.
 
 Currently only basic functionality is implemented. More specifically,
-`grid-nav`, `loadconfig`, `record`, and `playback` aren't implemented
-yet.
+`grid-nav`, `record`, and `playback` aren't implemented yet.
 
 ## Known issues/bugs
 
