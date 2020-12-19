@@ -239,6 +239,10 @@ LRESULT lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
                         processCommands(keyBindingRange[0].commands);
                         return 1;
                     }
+                    else
+                    {
+                        return CallNextHookEx(null, nCode, wParam, lParam);
+                    }
                 }
                 else
                 {
@@ -247,10 +251,10 @@ LRESULT lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
                     {
                         processCommands(keyBindingRange[0].commands);
                     }
-                    return 1;
+                    return ((hookStruct.vkCode >= VK_LSHIFT && hookStruct.vkCode <= VK_RCONTROL) || hookStruct.vkCode == VK_LWIN || hookStruct.vkCode == VK_RWIN)
+                        ? CallNextHookEx(null, nCode, wParam, lParam)
+                        : 1;
                 }
-
-                return active ? 1 : CallNextHookEx(null, nCode, wParam, lParam);
             default:
                 break;
         }
