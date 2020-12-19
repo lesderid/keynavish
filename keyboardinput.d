@@ -75,6 +75,9 @@ Nullable!KeyBinding parseKeyBindingString(string bindingString)
 
 Nullable!KeyCombination parseKeyCombination(string[] keyStrings)
 {
+    //TODO: Refactor
+    //TODO: Add more keys from X11/keysymdef.h
+
     KeyCombination combination;
 
     foreach (keyString; keyStrings)
@@ -227,11 +230,6 @@ LRESULT lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
                 modifiers |= ((GetKeyState(VK_LWIN) & 0x8000) | (GetKeyState(VK_RWIN) & 0x8000)) != 0 ? ModifierKey.super_ : ModifierKey.none;
 
                 auto pressedCombination = KeyCombination(hookStruct.vkCode, modifiers);
-
-                import core.sys.windows.windows : OutputDebugString;
-                import std.conv : to;
-                import std.exception : assumeWontThrow;
-                OutputDebugString((pressedCombination.vkCode.to!string ~ "\r\n").to!wstring.assumeWontThrow.ptr);
 
                 if (!active)
                 {
