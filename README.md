@@ -18,31 +18,34 @@ Alternatively, you can build the project with `dub build`.
 
 ## Configuration
 
-TODO
+keynavish uses the same configuration format as keynav. For more
+details, please see the [keynav
+documentation](https://github.com/jordansissel/keynav/blob/master/keynav.pod).
+
+On startup, keynavish loads a set of default keybindings, and then
+tries to load the following configuration files:
+
+* `~/.keynavrc`
+* `~/keynavrc`
+* `~/.config/keynav/keynavrc`
+
+Tildes (`~`) in paths are expanded to the value of `%HOME%` if it's set, with fallback to
+`%USERPROFILE%` (usually `C:\Users\<username>`).
 
 ## Compatibility with keynav
 
-keynavish aims to support everything keynav does, so you can simply copy
-over your keynavrc without having to make any changes.
+keynavish is fully compatible with keynav (modulo bugs), so you can
+simply copy over your keynavrc without having to make any changes.
 
-Any behaviour that is different or any feature that isn't implemented is
-a bug.
+Currently the `grid-nav` command is not implemented yet.
 
-Currently only basic functionality is implemented. More specifically,
-`grid-nav`, `record`, and `playback` aren't implemented yet.
+## Contributing
 
-## Known issues/bugs
-
-TODO: Move these to GitHub issues
-
-* Not DPI aware
-* Most likely doesn't work properly with multiple displays
-* Some spurious use of `assertWontThrow`
-* Dragging with a modifier (`ctrl`, `shift`, etc.) doesn't work properly
-* Not all X key names are supported yet
-
-Pull requests (or issues with more information) would be much
-appreciated.
+If you'd like to contribute, thank you! Please feel free to make a pull
+request (or open an issue), but make sure that your contribution does
+not break compatibility with keynav. In particular, any changes to the
+configuration format that are not compatible with keynav will generally
+be rejected.
 
 ## License
 
