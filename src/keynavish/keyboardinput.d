@@ -97,23 +97,10 @@ Nullable!KeyBinding parseKeyBindingString(string bindingString)
         return typeof(return)();
     }
 
-    if (bindingString == "daemonize")
+    if (bindingString.startsWith("daemonize", "clear", "loadconfig").assumeWontThrow)
     {
-        //we ignore this as we (will) use a system tray icon
-        return typeof(return)();
-    }
-    else if (bindingString == "clear")
-    {
-        startKeyBindings = [];
-        regularKeyBindings = [];
-
-        return typeof(return)();
-    }
-    else if (bindingString.startsWith("loadconfig"))
-    {
-        auto command = bindingString.csvReader!(string, Malformed.ignore)(' ').front.array.assumeWontThrow;
+        auto command = bindingString.parseCommaDelimitedCommands()[0];
         verifyCommand(command) && processCommand(command);
-
         return typeof(return)();
     }
 
@@ -121,11 +108,7 @@ Nullable!KeyBinding parseKeyBindingString(string bindingString)
 
     string[] keyStrings = parts[0].split('+').assumeWontThrow;
 
-    //abusing csvReader so quoted strings are handled properly
-    string[][] commands = parts[2].csvReader!(string, Malformed.ignore).front
-                                .map!strip
-                                .map!(c => c.csvReader!(string, Malformed.ignore)(' ').front.array)
-                                .array.assumeWontThrow;
+    string[][] commands = parts[2].parseCommaDelimitedCommands();
 
     auto keyCombination = keyStrings.parseKeyCombination();
     if (!verifyCommands(commands) || keyCombination.isNull)

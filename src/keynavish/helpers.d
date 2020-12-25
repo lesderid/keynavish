@@ -37,3 +37,18 @@ string expandPath(string inputString)
 
     return inputString.replace("/", "\\");
 }
+
+string[][] parseCommaDelimitedCommands(string input)
+{
+    import std.csv : csvReader, Malformed;
+    import std.algorithm : map;
+    import std.array : array;
+    import std.string : strip;
+    import std.exception : assumeWontThrow;
+
+    //abusing csvReader so quoted strings are handled properly
+    return input.csvReader!(string, Malformed.ignore).front
+                .map!strip
+                .map!(c => c.csvReader!(string, Malformed.ignore)(' ').front.array)
+                .array.assumeWontThrow;
+}

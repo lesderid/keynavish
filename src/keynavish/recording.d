@@ -63,11 +63,7 @@ void loadRecordings()
 
                 auto vkCode = parts[0].to!DWORD.assumeWontThrow;
 
-                //abusing csvReader so quoted strings are handled properly
-                auto commands = parts[2].csvReader!(string, Malformed.ignore).front
-                    .map!strip
-                    .map!(c => c.csvReader!(string, Malformed.ignore)(' ').front.array)
-                    .array.assumeWontThrow;
+                auto commands = parts[2].parseCommaDelimitedCommands();
 
                 auto recording = Recording(vkCode, commands, path);
                 auto recordingRange = recordings.find!(r => r.vkCode == vkCode);

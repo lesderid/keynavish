@@ -64,11 +64,9 @@ private void restart()
     import std.process : spawnProcess;
     import std.conv : to;
     import std.exception : assumeWontThrow;
+    import core.runtime : Runtime;
 
-    wchar[0x7FFF] path;
-    assert(GetModuleFileName(null, path.ptr, path.length));
-
-    spawnProcess(path.to!string).assumeWontThrow;
+    spawnProcess(Runtime.args).assumeWontThrow;
 
     quit();
 }
@@ -491,6 +489,12 @@ private void replay()
     startReplaying();
 }
 
+private void clear()
+{
+    startKeyBindings = [];
+    regularKeyBindings = [];
+}
+
 void processCommands(string[][] commands)
 {
     foreach (command; commands)
@@ -587,6 +591,12 @@ void processCommand(string[] command)
         case "playback":
             replay();
             break;
+        case "daemonize":
+            //we ignore this as we (will) use a system tray icon
+            break;
+        case "clear":
+            clear();
+            break;
         default:
             showError("Command not implemented: " ~ command[0]);
             break;
@@ -678,6 +688,12 @@ bool verifyCommand(string[] command)
             break;
         case "loadconfig":
             if (!argCount(1, 1)) return false;
+            break;
+        case "daemonize":
+            if (!argCount(0, 0)) return false;
+            break;
+        case "clear":
+            if (!argCount(0, 0)) return false;
             break;
         case "record":
             if (!argCount(0, 1)) return false;
