@@ -223,9 +223,6 @@ Nullable!KeyCombination parseKeyCombination(string[] keyStrings)
             case "space":
                 if (!setVkCode(VK_SPACE)) return typeof(return)();
                 break;
-            case "period":
-                if (!setVkCode(VK_OEM_PERIOD)) return typeof(return)();
-                break;
             case "bracketleft":
                 if (!setVkCode(VK_OEM_4)) return typeof(return)();
                 break;
@@ -238,6 +235,18 @@ Nullable!KeyCombination parseKeyCombination(string[] keyStrings)
             case "at":
                 //HACK: This doesn't have its own vkcode on Windows, but on X11 it has its own keysym
                 if (!setVkCode('2')) return typeof(return)();
+                break;
+            case "plus":
+                if (!setVkCode(VK_OEM_PLUS)) return typeof(return)();
+                break;
+            case "comma":
+                if (!setVkCode(VK_OEM_COMMA)) return typeof(return)();
+                break;
+            case "minus":
+                if (!setVkCode(VK_OEM_MINUS)) return typeof(return)();
+                break;
+            case "period":
+                if (!setVkCode(VK_OEM_PERIOD)) return typeof(return)();
                 break;
             case "a":
             case "b":
@@ -278,6 +287,18 @@ Nullable!KeyCombination parseKeyCombination(string[] keyStrings)
             case "8":
             case "9":
                 if (!setVkCode(keyString[0])) return typeof(return)();
+                break;
+            case "KP_0":
+            case "KP_1":
+            case "KP_2":
+            case "KP_3":
+            case "KP_4":
+            case "KP_5":
+            case "KP_6":
+            case "KP_7":
+            case "KP_8":
+            case "KP_9":
+                if (!setVkCode(0x60 + keyString[3] - '0')) return typeof(return)();
                 break;
             default:
                 showError("Unknown key: " ~ keyString);
@@ -365,7 +386,22 @@ LRESULT lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
                     auto keyBindingRange = regularKeyBindings.find!(b => b.keyCombination == pressedCombination);
                     if (!keyBindingRange.empty)
                     {
+                        if (recordingActive)
+                        {
+                            recordCommands(keyBindingRange[0].commands);
+                        }
                         processCommands(keyBindingRange[0].commands);
+                    }
+                    else
+                    {
+                        if (waitingForRecordingKey)
+                        {
+                            setRecordingKey(hookStruct.vkCode);
+                        }
+                        else if (replaying)
+                        {
+                            replay(hookStruct.vkCode);
+                        }
                     }
                     return ((hookStruct.vkCode >= VK_LSHIFT && hookStruct.vkCode <= VK_RCONTROL) || hookStruct.vkCode == VK_LWIN || hookStruct.vkCode == VK_RWIN)
                         ? CallNextHookEx(null, nCode, wParam, lParam)

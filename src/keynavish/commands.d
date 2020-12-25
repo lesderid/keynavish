@@ -474,6 +474,23 @@ private void cellSelect(string columnsAndRows)
     }
 }
 
+private void record(string path = null)
+{
+    if (recordingActive)
+    {
+        stopRecording();
+    }
+    else
+    {
+        startRecording(path);
+    }
+}
+
+private void replay()
+{
+    startReplaying();
+}
+
 void processCommands(string[][] commands)
 {
     foreach (command; commands)
@@ -563,6 +580,12 @@ void processCommand(string[] command)
             break;
         case "loadconfig":
             loadConfig(command[1]);
+            break;
+        case "record":
+            record(command.length == 2 ? command[1] : null);
+            break;
+        case "playback":
+            replay();
             break;
         default:
             showError("Command not implemented: " ~ command[0]);
@@ -661,6 +684,9 @@ bool verifyCommand(string[] command)
             break;
         case "playback":
             if (!argCount(0, 0)) return false;
+            break;
+        case "grid-nav":
+            if (!argCount(1, 1)) return false;
             break;
         case "ignore":
             break;

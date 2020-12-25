@@ -35,6 +35,8 @@ int _main(string[] args)
     loadConfig("~/keynavrc", true);
     loadConfig("~/.config/keynav/keynavrc", true);
 
+    loadRecordings();
+
     createWindow();
 
     resetGrid();
