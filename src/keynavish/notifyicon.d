@@ -8,13 +8,12 @@ import core.sys.windows.windows;
 
 NOTIFYICONDATA notifyIconData;
 HMENU popupMenu;
+HKEY registryKey;
+
+//TODO: Error handling
 
 void addNotifyIcon()
 {
-    //TODO: Error handling
-
-    createPopUpMenu();
-
     auto icon = LoadIcon(LoadLibrary("main.cpl"), MAKEINTRESOURCE(108));
 
     notifyIconData.uVersion = 4;
@@ -26,6 +25,8 @@ void addNotifyIcon()
 
     Shell_NotifyIcon(NIM_ADD, &notifyIconData);
     Shell_NotifyIcon(NIM_SETVERSION, &notifyIconData);
+
+    openRegistryKey();
 }
 
 void removeNotifyIcon()
@@ -41,6 +42,7 @@ void handleNotifyIconMessage(WPARAM wParam, LPARAM lParam)
         GetCursorPos(&cursorPosition);
 
         SetForegroundWindow(windowHandle);
+        createPopUpMenu();
         auto command = cast(MenuItem) TrackPopupMenu(popupMenu,
                                                      TPM_LEFTALIGN | TPM_BOTTOMALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD,
                                                      cursorPosition.x,
@@ -61,9 +63,9 @@ void handleCommand(MenuItem menuItem)
             ShellExecute(null, "open", programUrl, null, null, SW_SHOWNORMAL);
             break;
         case ToggleLaunchOnStartup:
-            showError("Not implemented yet!");
+            toggleLaunchValue();
             break;
-        case OpenConfigFile:
+        case EditConfigFile:
             showError("Not implemented yet!");
             break;
         case About:
@@ -82,7 +84,7 @@ enum MenuItem
     None,
     Help,
     ToggleLaunchOnStartup,
-    OpenConfigFile,
+    EditConfigFile,
     About,
     Exit
 }
@@ -92,6 +94,11 @@ void createPopUpMenu()
     import std.exception : assumeWontThrow;
     import std.format : format;
     import std.conv : to;
+
+    if (popupMenu)
+    {
+        DestroyMenu(popupMenu);
+    }
 
     popupMenu = CreatePopupMenu();
 
@@ -117,9 +124,41 @@ void createPopUpMenu()
 
     addStringItem!("Help", MenuItem.Help);
     addSeparator();
-    addCheckboxItem!("Launch %s on startup", MenuItem.ToggleLaunchOnStartup)(false, programName);
-    addStringItem!("Open config file", MenuItem.OpenConfigFile);
+    addCheckboxItem!("Launch %s on startup", MenuItem.ToggleLaunchOnStartup)(launchValueExists, programName);
+    addStringItem!("Edit config file", MenuItem.EditConfigFile);
     addSeparator();
     addStringItem!("About %s (%s)...", MenuItem.About)(programName, gitVersion);
     addStringItem!("Exit", MenuItem.Exit);
+}
+
+void openRegistryKey()
+{
+    auto result = RegOpenKeyEx(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, KEY_READ | KEY_SET_VALUE, &registryKey);
+    assert(result == ERROR_SUCCESS);
+}
+
+bool launchValueExists()
+{
+    return RegQueryValueExW(registryKey, programName, null, null, null, null) != ERROR_FILE_NOT_FOUND;
+}
+
+void toggleLaunchValue()
+{
+    import core.runtime : Runtime;
+    import std.algorithm : map;
+    import std.string : join;
+    import std.conv : to;
+    import std.exception : assumeWontThrow;
+
+    if (launchValueExists)
+    {
+        RegDeleteValue(registryKey, programName);
+    }
+    else
+    {
+        //HACK: We should properly quote the strings when necessary
+        auto launchValue = Runtime.args.map!(s => '"' ~ s ~ '"').join(' ').to!wstring.dup.assumeWontThrow;
+
+        RegSetValueEx(registryKey, programName, 0, REG_SZ, cast(ubyte*) launchValue.ptr, cast(uint) (launchValue.length * wchar.sizeof));
+    }
 }
