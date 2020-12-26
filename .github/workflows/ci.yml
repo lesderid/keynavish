@@ -1,0 +1,19 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+        - name: Checkout keynavish
+          uses: actions/checkout@v2
+          with:
+            fetch-depth: 0
+        - name: Install dmd and dub
+          uses: dlang-community/setup-dlang@v1
+          with:
+            compiler: dmd-latest
+        - name: Build keynavish
+          run: dub build
