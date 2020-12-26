@@ -4,6 +4,8 @@ authors "lesderid"
 copyright "Copyright © 2020, Les De Ridder"
 license "GPL-2.0"
 
+preBuildCommands "generate-version-info.bat"
+
 libs "User32" "Gdi32"
 
 targetPath "out"

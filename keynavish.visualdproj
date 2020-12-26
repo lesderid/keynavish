@@ -315,7 +315,7 @@
   <ccTransOpt>1</ccTransOpt>
   <addDepImp>0</addDepImp>
   <program>$(DMDInstallDir)windows\bin\dmd.exe</program>
-  <imppath />
+  <imppath>src</imppath>
   <fileImppath />
   <outdir>$(PlatformName)\$(ConfigurationName)</outdir>
   <objdir>$(OutDir)</objdir>
@@ -365,7 +365,7 @@
   <cRuntime>2</cRuntime>
   <privatePhobos>0</privatePhobos>
   <additionalOptions />
-  <preBuildCommand />
+  <preBuildCommand>call generate-version-info.bat</preBuildCommand>
   <postBuildCommand />
   <filesToClean>*.obj;*.cmd;*.build;*.json;*.dep;*.tlog</filesToClean>
  </Config>

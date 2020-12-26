@@ -105,7 +105,7 @@ void showHelp(std.getopt.Option[] getoptOptions)
 
 void showVersion()
 {
-    showError("Version info not implemented yet.");
+    showInfo(programName ~ " " ~ gitVersion ~ "\0");
 }
 
 void messageLoop()

@@ -9,3 +9,4 @@ public import keynavish.helpers;
 public import keynavish.keyboardinput;
 public import keynavish.window;
 public import keynavish.recording;
+public import keynavish.versioninfo;
