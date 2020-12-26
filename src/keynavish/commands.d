@@ -53,9 +53,9 @@ private void toggleStart()
 
 private void quit()
 {
-    import core.sys.windows.windows : ExitProcess;
+    import core.sys.windows.windows : PostQuitMessage;
 
-    ExitProcess(0);
+    PostQuitMessage(0);
 }
 
 private void restart()
@@ -306,8 +306,6 @@ private void doubleClick(string button)
 
 private void drag(string button, string modifiers)
 {
-    //TODO: Implement modifiers
-
     import core.sys.windows.windows;
     import std.string : split;
     import std.exception : assumeWontThrow;
@@ -592,7 +590,7 @@ void processCommand(string[] command)
             replay();
             break;
         case "daemonize":
-            //we ignore this as we (will) use a system tray icon
+            //we ignore this as we always add a notification icon
             break;
         case "clear":
             clear();

@@ -8,6 +8,7 @@ import keynavish;
 HWND windowHandle;
 
 bool active;
+bool quitting;
 
 void registerWindowClass()
 {
@@ -70,7 +71,11 @@ LRESULT windowProc(HWND handle, UINT message, WPARAM wParam, LPARAM lParam)
             EndPaint(handle, &ps);
             break;
         case WM_DESTROY:
-            PostQuitMessage(0);
+        case WM_QUIT:
+            quitting = true;
+            break;
+        case WM_USER:
+            handleNotifyIconMessage(wParam, lParam);
             break;
         default:
             return DefWindowProc(handle, message, wParam, lParam);
