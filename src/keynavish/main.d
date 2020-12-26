@@ -42,9 +42,10 @@ static this()
 extern(C)
 int _main(string[] args)
 {
-    loadConfig("~/.keynavrc", true);
-    loadConfig("~/keynavrc", true);
-    loadConfig("~/.config/keynav/keynavrc", true);
+    foreach (path; configFilePaths)
+    {
+        loadConfig(path, true);
+    }
 
     loadRecordings();
 

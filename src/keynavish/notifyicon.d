@@ -10,6 +10,9 @@ NOTIFYICONDATA notifyIconData;
 HMENU popupMenu;
 HKEY registryKey;
 
+pragma(lib, "Urlmon");
+extern(C) HRESULT URLDownloadToFileW(LPUNKNOWN, LPCTSTR, LPCTSTR, DWORD, void*);
+
 //TODO: Error handling
 
 void addNotifyIcon()
@@ -66,7 +69,7 @@ void handleCommand(MenuItem menuItem)
             toggleLaunchValue();
             break;
         case EditConfigFile:
-            showError("Not implemented yet!");
+            editConfigFile();
             break;
         case About:
             showInfo(programInfo);
@@ -161,4 +164,49 @@ void toggleLaunchValue()
 
         RegSetValueEx(registryKey, programName, 0, REG_SZ, cast(ubyte*) launchValue.ptr, cast(uint) (launchValue.length * wchar.sizeof));
     }
+}
+
+void editConfigFile()
+{
+    import std.file : exists, write;
+    import std.range : empty;
+    import std.algorithm : map, find;
+    import std.conv : to;
+    import std.exception : assumeWontThrow;
+    import std.format : format;
+
+    string path;
+
+    auto configFileRange = configFilePaths.map!expandPath.find!exists;
+    if (configFileRange.empty)
+    {
+        path = configFilePaths[0].expandPath;
+
+        auto result = MessageBox(null,
+                                 format!"No config file found, one will be created at %s. Would you like to download an example config?"(path).to!wstring.ptr.assumeWontThrow,
+                                 programName,
+                                 MB_YESNOCANCEL);
+        if (result == IDCANCEL)
+        {
+            return;
+        }
+        else if (result == IDYES)
+        {
+            URLDownloadToFileW(null, exampleConfigUrl, (path ~ "\0").to!wstring.ptr, 0, null).assumeWontThrow;
+        }
+        else if (result == IDNO)
+        {
+            write(path, []).assumeWontThrow;
+        }
+        else
+        {
+            assert(false);
+        }
+    }
+    else
+    {
+        path = configFileRange[0];
+    }
+
+    ShellExecute(null, "open", (path ~ "\0").to!wstring.ptr.assumeWontThrow, null, null, SW_SHOWNORMAL);
 }
