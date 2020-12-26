@@ -15,8 +15,8 @@ enum programInfo = programName ~ q"EOS
  – Control the mouse with the keyboard, on Windows.
 
 Copyright © 2020, Les De Ridder <les@lesderid.net>
-Home page: <https://github.com/lesderid/keynavish>
-EOS";
+EOS" ~ "Home page: <" ~ programUrl ~ ">";
+enum programUrl = "https://github.com/lesderid/keynavish";
 
 enum usageHelpString = "Usage: " ~ programName ~ ".exe [options] [optional-startup-commands]\r\n" ~
 "Example: " ~ programName ~ ".exe \"loadconfig ~/myconfigs/keynavrc,loadconfig ~/myconfigs/anotherkeynavrc\"\r\n";

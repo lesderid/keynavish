@@ -502,6 +502,7 @@
     <File path="src\keynavish\helpers.d" />
     <File path="src\keynavish\keyboardinput.d" />
     <File path="src\keynavish\main.d" />
+    <File path="src\keynavish\notifyicon.d" />
     <File path="src\keynavish\package.d" />
     <File path="src\keynavish\recording.d" />
     <File path="src\keynavish\window.d" />

@@ -54,7 +54,11 @@ int _main(string[] args)
 
         resetGrid();
 
+        addNotifyIcon();
+
         messageLoop();
+
+        removeNotifyIcon();
     }
 
     return 0;
@@ -98,7 +102,7 @@ void showHelp(std.getopt.Option[] getoptOptions)
     import std.exception : assumeWontThrow;
 
     auto helpAppender = appender!(char[]);
-    defaultGetoptFormatter(helpAppender, programInfo ~ "\r\n" ~ usageHelpString, getoptOptions).assumeWontThrow;
+    defaultGetoptFormatter(helpAppender, programInfo ~ "\r\n\r\n" ~ usageHelpString, getoptOptions).assumeWontThrow;
 
     showInfo(helpAppender[]);
 }
@@ -111,7 +115,7 @@ void showVersion()
 void messageLoop()
 {
     MSG msg;
-    while (GetMessage(&msg, null, 0, 0))
+    while (GetMessage(&msg, null, 0, 0) && !quitting)
     {
         DispatchMessage(&msg);
     }
