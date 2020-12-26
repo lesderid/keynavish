@@ -20,3 +20,7 @@ enum programUrl = "https://github.com/lesderid/keynavish";
 
 enum usageHelpString = "Usage: " ~ programName ~ ".exe [options] [optional-startup-commands]\r\n" ~
 "Example: " ~ programName ~ ".exe \"loadconfig ~/myconfigs/keynavrc,loadconfig ~/myconfigs/anotherkeynavrc\"\r\n";
+
+enum configFilePaths = ["~/.keynavrc", "~/keynavrc", "~/.config/keynav/keynavrc"];
+
+enum exampleConfigUrl = "https://raw.githubusercontent.com/jordansissel/keynav/78f9e076a5618aba43b030fbb9344c415c30c1e5/keynavrc";
