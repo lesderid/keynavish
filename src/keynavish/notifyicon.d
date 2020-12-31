@@ -129,12 +129,12 @@ void createPopUpMenu()
         InsertMenu(popupMenu, -1, MF_BYPOSITION | (checked ? MF_CHECKED : MF_UNCHECKED), menuItem, formatTitle!formatString(args));
     }
 
-    addStringItem!("Help", MenuItem.Help);
+    addStringItem!("About %s (%s)...", MenuItem.About)(programName, gitVersion);
+    addStringItem!("Home page", MenuItem.Help);
     addSeparator();
     addCheckboxItem!("Launch %s on startup", MenuItem.ToggleLaunchOnStartup)(launchValueExists, programName);
     addStringItem!("Edit config file", MenuItem.EditConfigFile);
     addSeparator();
-    addStringItem!("About %s (%s)...", MenuItem.About)(programName, gitVersion);
     addStringItem!("Restart %s", MenuItem.Restart)(programName);
     addStringItem!("Exit", MenuItem.Exit);
 }
