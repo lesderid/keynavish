@@ -3,41 +3,41 @@
 Control the mouse with the keyboard, on Windows.
 
 This is a rewrite of [keynav](https://github.com/jordansissel/keynav)
-for Windows.
+for Windows. It is fully compatible with the original (modulo
+[bugs](https://github.com/lesderid/keynavish/issues?q=is%3Aopen+is%3Aissue+label%3Acompatibility)),
+so you can use the same configuration files for both programs.
 
-keynavish is mainly tested on Windows 8, but most likely also works on
-Windows 7 and Windows 10.
+keynavish works on Windows 8.1 and later. Older versions might work too
+but are unsupported.
 
-## Building
+## Installing
 
-The project can be compiled with Visual Studio +
-[VisualD](https://rainers.github.io/visuald/) with the supplied solution
-file.
-
-Alternatively, you can build the project with `dub build`.
+You can 'install' keynavish by downloading the [latest
+release](https://github.com/lesderid/keynavish/releases/latest)
+executable, running it, and selecting `Launch keynavish on startup` from
+the notification icon context menu.
 
 ## Configuration
 
-keynavish uses the same configuration format as keynav. For more
-details, please see the [keynav
-documentation](https://github.com/jordansissel/keynav/blob/master/keynav.pod).
+Configuration format: [keynav
+documentation](https://github.com/jordansissel/keynav/blob/master/keynav.pod)
 
-On startup, keynavish loads a set of default keybindings, and then
-tries to load the following configuration files:
+On startup, keynavish loads a set of default keybindings, and then tries
+to load the following configuration files:
 
 * `~/.keynavrc`
 * `~/keynavrc`
 * `~/.config/keynav/keynavrc`
 
-Tildes (`~`) in paths are expanded to the value of `%HOME%` if it's set, with fallback to
-`%USERPROFILE%` (usually `C:\Users\<username>`).
+Tildes (`~`) in paths are expanded to the value of `%HOME%` if it's set,
+with fallback to `%USERPROFILE%` (usually `C:\Users\<username>`).
 
-## Compatibility with keynav
+## Building
 
-keynavish is fully compatible with keynav (modulo bugs), so you can
-simply copy over your keynavrc without having to make any changes.
+Install [dub](https://dub.pm/) and run `dub build`.
 
-Currently the `grid-nav` command is not implemented yet.
+For development, using [VisualD](https://rainers.github.io/visuald/)
+with the supplied solution file is recommended.
 
 ## Contributing
 
