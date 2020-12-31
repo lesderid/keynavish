@@ -58,7 +58,7 @@ private void quit()
     PostQuitMessage(0);
 }
 
-private void restart()
+void restart()
 {
     import core.sys.windows.windows : GetModuleFileName;
     import std.process : spawnProcess;

@@ -74,6 +74,9 @@ void handleCommand(MenuItem menuItem)
         case About:
             showInfo(programInfo);
             break;
+        case Restart:
+            restart();
+            break;
         case Exit:
             PostQuitMessage(0);
             break;
@@ -89,6 +92,7 @@ enum MenuItem
     ToggleLaunchOnStartup,
     EditConfigFile,
     About,
+    Restart,
     Exit
 }
 
@@ -131,6 +135,7 @@ void createPopUpMenu()
     addStringItem!("Edit config file", MenuItem.EditConfigFile);
     addSeparator();
     addStringItem!("About %s (%s)...", MenuItem.About)(programName, gitVersion);
+    addStringItem!("Restart %s", MenuItem.Restart)(programName);
     addStringItem!("Exit", MenuItem.Exit);
 }
 
