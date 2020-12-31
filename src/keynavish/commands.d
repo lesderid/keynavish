@@ -216,7 +216,8 @@ private void cursorZoom(int width, int height)
 
     POINT cursorPosition;
 
-    assert(GetCursorPos(&cursorPosition));
+    auto result = GetCursorPos(&cursorPosition);
+    assert(result);
 
     Grid newGrid = grid;
     newGrid.rect.left = cursorPosition.x - width / 2;
