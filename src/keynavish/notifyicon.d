@@ -71,6 +71,9 @@ void handleCommand(MenuItem menuItem)
         case EditConfigFile:
             editConfigFile();
             break;
+        case ReloadConfig:
+            loadAllConfigs();
+            break;
         case About:
             showInfo(programInfo);
             break;
@@ -91,6 +94,7 @@ enum MenuItem
     Help,
     ToggleLaunchOnStartup,
     EditConfigFile,
+    ReloadConfig,
     About,
     Restart,
     Exit
@@ -134,6 +138,7 @@ void createPopUpMenu()
     addSeparator();
     addCheckboxItem!("Launch %s on startup", MenuItem.ToggleLaunchOnStartup)(launchValueExists, programName);
     addStringItem!("Edit config file", MenuItem.EditConfigFile);
+    addStringItem!("Reload configuration", MenuItem.ReloadConfig);
     addSeparator();
     addStringItem!("Restart %s", MenuItem.Restart)(programName);
     addStringItem!("Exit", MenuItem.Exit);

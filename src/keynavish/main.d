@@ -42,12 +42,7 @@ static this()
 extern(C)
 int _main(string[] args)
 {
-    foreach (path; configFilePaths)
-    {
-        loadConfig(path, true);
-    }
-
-    loadRecordings();
+    loadAllConfigs();
 
     if (handleArgsAndContinue(args))
     {

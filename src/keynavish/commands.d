@@ -385,6 +385,18 @@ private void runShellCommand(string shellCommand)
     spawnShell(shellCommand).assumeWontThrow;
 }
 
+void loadAllConfigs()
+{
+    recordings = [];
+
+    foreach (path; configFilePaths)
+    {
+        loadConfig(path, true);
+    }
+
+    loadRecordings();
+}
+
 void loadConfig(string pathString, bool silent = false)
 {
     import std.file : exists, readText;
