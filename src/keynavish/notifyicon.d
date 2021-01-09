@@ -14,15 +14,14 @@ void addNotifyIcon()
 {
     auto icon = LoadIcon(LoadLibrary("main.cpl"), MAKEINTRESOURCE(108));
 
-    notifyIconData.uVersion = 4;
-    notifyIconData.uFlags = NIF_ICON | NIF_TIP | NIS_HIDDEN;
+    notifyIconData.uVersion = 0;
+    notifyIconData.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
     notifyIconData.hWnd = windowHandle;
     notifyIconData.szTip = programName;
     notifyIconData.hIcon = icon;
     notifyIconData.uCallbackMessage = WM_USER;
 
     Shell_NotifyIcon(NIM_ADD, &notifyIconData);
-    Shell_NotifyIcon(NIM_SETVERSION, &notifyIconData);
 
     openRegistryKey();
 }
@@ -34,15 +33,17 @@ void removeNotifyIcon()
 
 void handleNotifyIconMessage(WPARAM wParam, LPARAM lParam)
 {
-    if (LOWORD(lParam) == WM_CONTEXTMENU)
+    if (lParam == WM_RBUTTONUP || lParam == WM_LBUTTONUP)
     {
         POINT cursorPosition;
         GetCursorPos(&cursorPosition);
 
         SetForegroundWindow(windowHandle);
         createPopUpMenu();
+
+        auto alignment = GetSystemMetrics(SM_MENUDROPALIGNMENT) != 0 ? TPM_RIGHTALIGN : TPM_LEFTALIGN;
         auto command = cast(MenuItem) TrackPopupMenu(popupMenu,
-                                                     TPM_LEFTALIGN | TPM_BOTTOMALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD,
+                                                     alignment | TPM_BOTTOMALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD,
                                                      cursorPosition.x,
                                                      cursorPosition.y,
                                                      0,
