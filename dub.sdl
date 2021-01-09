@@ -7,5 +7,6 @@ license "GPL-2.0"
 preBuildCommands "generate-version-info.bat"
 
 libs "User32" "Gdi32"
+stringImportPaths "."
 
 targetPath "out"

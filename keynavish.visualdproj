@@ -70,7 +70,7 @@
   <addDepImp>0</addDepImp>
   <program>$(DMDInstallDir)windows\bin\dmd.exe</program>
   <imppath>src</imppath>
-  <fileImppath />
+  <fileImppath>.</fileImppath>
   <outdir>$(PlatformName)\$(ConfigurationName)</outdir>
   <objdir>$(OutDir)</objdir>
   <objname />
@@ -193,7 +193,7 @@
   <addDepImp>0</addDepImp>
   <program>$(DMDInstallDir)windows\bin\dmd.exe</program>
   <imppath>src</imppath>
-  <fileImppath />
+  <fileImppath>.</fileImppath>
   <outdir>$(PlatformName)\$(ConfigurationName)</outdir>
   <objdir>$(OutDir)</objdir>
   <objname />
@@ -316,7 +316,7 @@
   <addDepImp>0</addDepImp>
   <program>$(DMDInstallDir)windows\bin\dmd.exe</program>
   <imppath>src</imppath>
-  <fileImppath />
+  <fileImppath>.</fileImppath>
   <outdir>$(PlatformName)\$(ConfigurationName)</outdir>
   <objdir>$(OutDir)</objdir>
   <objname />
@@ -439,7 +439,7 @@
   <addDepImp>0</addDepImp>
   <program>$(DMDInstallDir)windows\bin\dmd.exe</program>
   <imppath>src</imppath>
-  <fileImppath />
+  <fileImppath>.</fileImppath>
   <outdir>$(PlatformName)\$(ConfigurationName)</outdir>
   <objdir>$(OutDir)</objdir>
   <objname />

@@ -8,9 +8,6 @@ NOTIFYICONDATA notifyIconData;
 HMENU popupMenu;
 HKEY registryKey;
 
-pragma(lib, "Urlmon");
-extern(C) HRESULT URLDownloadToFileW(LPUNKNOWN, LPCTSTR, LPCTSTR, DWORD, void*);
-
 //TODO: Error handling
 
 void addNotifyIcon()
@@ -184,7 +181,7 @@ void editConfigFile()
         path = configFilePaths[0].expandPath;
 
         auto result = MessageBox(null,
-                                 format!"No config file found, one will be created at %s. Would you like to download an example config?"(path).toUTF16z,
+                                 format!"No config file found, one will be created at %s. Would you like to use an example config?"(path).toUTF16z,
                                  programName.ptr,
                                  MB_YESNOCANCEL);
         if (result == IDCANCEL)
@@ -193,7 +190,7 @@ void editConfigFile()
         }
         else if (result == IDYES)
         {
-            URLDownloadToFileW(null, exampleConfigUrl, path.toUTF16z, 0, null);
+            write(path, import("keynavrc"));
         }
         else if (result == IDNO)
         {

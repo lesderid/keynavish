@@ -23,6 +23,4 @@ enum usageHelpString = "Usage: " ~ programName ~ ".exe [options] [optional-start
 
 enum configFilePaths = ["~/.keynavrc", "~/keynavrc", "~/.config/keynav/keynavrc"];
 
-enum exampleConfigUrl = "https://raw.githubusercontent.com/jordansissel/keynav/78f9e076a5618aba43b030fbb9344c415c30c1e5/keynavrc";
-
 enum unhandledExceptionMessage = "This is a bug, please press Ctrl+C and report it at https://github.com/lesderid/keynavish/issues/new.";
