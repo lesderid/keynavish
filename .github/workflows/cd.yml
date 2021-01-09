@@ -17,7 +17,7 @@ jobs:
         uses: dlang-community/setup-dlang@v1
         with:
           compiler: dmd-latest
-      - name: Build keynavish
+      - name: Build keynavish (x86_64)
         run: dub build -b=release -a=x86_64
       - name: Create release
         id: create-release
@@ -32,8 +32,7 @@ jobs:
       - name: Get release version
         id: get-release-version
         uses: little-core-labs/get-git-tag@v3.0.1
-      - name: Upload release asset
-        id: upload-release-asset
+      - name: Upload release asset (x86_64)
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -41,4 +40,15 @@ jobs:
           upload_url: ${{ steps.create-release.outputs.upload_url }}
           asset_path: ./out/keynavish.exe
           asset_name: keynavish-${{ steps.get-release-version.outputs.tag }}-x86_64.exe
+          asset_content_type: application/octet-stream
+      - name: Build keynavish (x86)
+        run: dub build -b=release -a=x86
+      - name: Upload release asset (x86)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create-release.outputs.upload_url }}
+          asset_path: ./out/keynavish.exe
+          asset_name: keynavish-${{ steps.get-release-version.outputs.tag }}-x86.exe
           asset_content_type: application/octet-stream
