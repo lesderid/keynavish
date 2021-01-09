@@ -4,8 +4,6 @@ import core.sys.windows.windows : RECT, HDC, HPEN;
 import std.container : SList;
 import keynavish;
 
-@system nothrow:
-
 struct Grid
 {
     RECT rect;

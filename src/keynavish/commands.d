@@ -4,8 +4,6 @@ import keynavish;
 
 import core.sys.windows.windows : LONG, DWORD;
 
-@system nothrow:
-
 DWORD draggingFlag;
 
 enum Direction
@@ -63,10 +61,9 @@ void restart()
     import core.sys.windows.windows : GetModuleFileName;
     import std.process : spawnProcess;
     import std.conv : to;
-    import std.exception : assumeWontThrow;
     import core.runtime : Runtime;
 
-    spawnProcess(Runtime.args).assumeWontThrow;
+    spawnProcess(Runtime.args);
 
     quit();
 }
@@ -75,7 +72,6 @@ private LONG getCutMoveValue(Direction direction, string arg)
 {
     import std.algorithm : canFind;
     import std.conv : to;
-    import std.exception : assumeWontThrow;
 
     if (arg == "0")
     {
@@ -88,13 +84,13 @@ private LONG getCutMoveValue(Direction direction, string arg)
     {
         return original;
     }
-    else if (arg.canFind('.').assumeWontThrow)
+    else if (arg.canFind('.'))
     {
-        return cast(LONG)(arg.to!double * original).assumeWontThrow;
+        return cast(LONG)(arg.to!double * original);
     }
     else
     {
-        return arg.to!LONG.assumeWontThrow;
+        return arg.to!LONG;
     }
 }
 
@@ -309,7 +305,6 @@ private void drag(string button, string modifiers)
 {
     import core.sys.windows.windows;
     import std.string : split;
-    import std.exception : assumeWontThrow;
 
     static bool dragging = false;
 
@@ -338,7 +333,7 @@ private void drag(string button, string modifiers)
         INPUT[] keyUpInputs;
         INPUT[] keyDownInputs;
 
-        foreach (modifier; modifiers.split('+').assumeWontThrow)
+        foreach (modifier; modifiers.split('+'))
         {
             INPUT keyboardInput;
             keyboardInput.type = INPUT_KEYBOARD;
@@ -380,9 +375,8 @@ private void drag(string button, string modifiers)
 private void runShellCommand(string shellCommand)
 {
     import std.process : spawnShell;
-    import std.exception : assumeWontThrow;
 
-    spawnShell(shellCommand).assumeWontThrow;
+    spawnShell(shellCommand);
 }
 
 void loadAllConfigs()
@@ -400,7 +394,6 @@ void loadAllConfigs()
 void loadConfig(string pathString, bool silent = false)
 {
     import std.file : exists, readText;
-    import std.exception : assumeWontThrow;
     import std.range : array;
     import std.conv : to;
     import std.format : format;
@@ -414,19 +407,19 @@ void loadConfig(string pathString, bool silent = false)
         {
             if (path == pathString)
             {
-                showError(format!"Error loading config file: %s does not exist"(path).assumeWontThrow);
+                showError(format!"Error loading config file: %s does not exist"(path));
             }
             else
             {
-                showError(format!"Error loading config file: %s (expanded to: %s) does not exist"(pathString, path).assumeWontThrow);
+                showError(format!"Error loading config file: %s (expanded to: %s) does not exist"(pathString, path));
             }
         }
         return;
     }
 
-    foreach (line; path.readText.replace('\r', "").split('\n').assumeWontThrow)
+    foreach (line; path.readText.replace('\r', "").split('\n'))
     {
-        registerKeyBinding(line.to!string.assumeWontThrow);
+        registerKeyBinding(line.to!string);
     }
 }
 
@@ -442,9 +435,8 @@ private void changeGrid(string columnsAndRows)
     import std.range : split, array;
     import std.algorithm : map;
     import std.conv : to;
-    import std.exception : assumeWontThrow;
 
-    auto dimArray = columnsAndRows.split('x').map!(to!int).array.assumeWontThrow;
+    auto dimArray = columnsAndRows.split('x').map!(to!int).array;
 
     Grid newGrid = grid;
     newGrid.columns = dimArray[0];
@@ -460,9 +452,8 @@ private void cellSelect(string columnsAndRows)
     import std.range : split, array;
     import std.algorithm : map;
     import std.conv : to;
-    import std.exception : assumeWontThrow;
 
-    auto dimArray = columnsAndRows.split('x').map!(to!int).array.assumeWontThrow;
+    auto dimArray = columnsAndRows.split('x').map!(to!int).array;
 
     auto x = grid.rect.left;
     auto y = grid.rect.top;
@@ -530,7 +521,6 @@ bool verifyCommands(string[][] commands)
 void processCommand(string[] command)
 {
     import std.conv : to;
-    import std.exception : assumeWontThrow;
 
     switch (command[0])
     {
@@ -567,7 +557,7 @@ void processCommand(string[] command)
             drag(command[1], command.length == 3 ? command[2] : null);
             break;
         case "cursorzoom":
-            cursorZoom(command[1].to!int.assumeWontThrow, command[2].to!int.assumeWontThrow);
+            cursorZoom(command[1].to!int, command[2].to!int);
             break;
         case "history-back":
             historyBack();
@@ -620,10 +610,9 @@ bool verifyCommand(string[] command)
     //TODO: Refactor (with UDAs?)
 
     import std.format : format;
-    import std.exception : assumeWontThrow;
     import std.string : join;
 
-    auto commandString = command.join(' ').assumeWontThrow;
+    auto commandString = command.join(' ');
     bool argCount(int minCount, int maxCount)
     {
         auto count = command.length - 1;
@@ -639,7 +628,7 @@ bool verifyCommand(string[] command)
                                                                             minCount == 1 ? "arg" : "args",
                                                                             count,
                                                                             count == 1 ? "was" : "were",
-                                                                            commandString).assumeWontThrow);
+                                                                            commandString));
         }
         else
         {
@@ -649,7 +638,7 @@ bool verifyCommand(string[] command)
                                                                                maxCount == 1 ? "arg" : "args",
                                                                                count,
                                                                                count == 1 ? "was" : "were",
-                                                                               commandString).assumeWontThrow);
+                                                                               commandString));
         }
         return false;
     }

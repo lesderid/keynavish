@@ -4,25 +4,27 @@ import core.sys.windows.windows;
 static import std.getopt;
 import keynavish;
 
-@system nothrow:
-
 alias extern(C) int function(string[] args) MainFunc;
 extern (C) int _d_run_main(int argc, char **argv, MainFunc mainFunc);
 
-extern (Windows)
-int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+int WinMain_(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
     import std.algorithm : map;
     import std.conv : to;
     import std.array : array;
     import std.string : fromStringz;
-    import std.exception : assumeWontThrow;
 
     int argCount;
     wchar** wideArgs = CommandLineToArgvW(GetCommandLine(), &argCount);
-    char** args = wideArgs[0 .. argCount].map!(cs => cs.fromStringz.to!(char[]).ptr).array.ptr.assumeWontThrow;
+    char** args = wideArgs[0 .. argCount].map!(cs => cs.fromStringz.to!(char[]).ptr).array.ptr;
 
-    return _d_run_main(argCount, args, &_main); // arguments unused, retrieved via CommandLineToArgvW
+    return _d_run_main(argCount, args, &_main);
+}
+
+extern(Windows)
+int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+{
+    return exceptionHandlerWrapper!WinMain_(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
 }
 
 static this()
@@ -63,11 +65,10 @@ int _main(string[] args)
 bool handleArgsAndContinue(string[] args)
 {
     import std.getopt;
-    import std.exception : assumeWontThrow;
     import std.algorithm : canFind;
 
     bool printVersion;
-    auto getoptResult = getopt(args, config.passThrough, "version|V", "Program version information.", &printVersion).assumeWontThrow;
+    auto getoptResult = getopt(args, config.passThrough, "version|V", "Program version information.", &printVersion);
     printVersion = printVersion || args.canFind("version");
 
     if (printVersion)
@@ -95,10 +96,9 @@ void showHelp(std.getopt.Option[] getoptOptions)
 {
     import std.getopt : defaultGetoptFormatter;
     import std.array : appender;
-    import std.exception : assumeWontThrow;
 
     auto helpAppender = appender!(char[]);
-    defaultGetoptFormatter(helpAppender, programInfo ~ "\r\n\r\n" ~ usageHelpString, getoptOptions).assumeWontThrow;
+    defaultGetoptFormatter(helpAppender, programInfo ~ "\r\n\r\n" ~ usageHelpString, getoptOptions);
 
     showInfo(helpAppender[]);
 }

@@ -4,8 +4,6 @@ import keynavish;
 
 import core.sys.windows.windows : DWORD;
 
-@system nothrow:
-
 struct Recording
 {
     DWORD vkCode;
@@ -17,9 +15,8 @@ struct Recording
         import std.algorithm : map;
         import std.string : join;
         import std.format : format;
-        import std.exception : assumeWontThrow;
 
-        return format!"%d %s\r\n"(vkCode, commands.map!(c => c.join(' ')).join(", ")).assumeWontThrow;
+        return format!"%d %s\r\n"(vkCode, commands.map!(c => c.join(' ')).join(", "));
     }
 }
 
@@ -40,45 +37,41 @@ void loadRecordings()
     import std.algorithm : map, filter, joiner, splitter, findSplit, find;
     import std.file : exists, readText;
     import std.conv : to;
-    import std.exception : assumeWontThrow;
     import std.array : replace, array;
-    import std.csv : csvReader, Malformed;
     import std.string : strip;
     import std.format : format;
     import std.range : empty;
 
-    () {
-        foreach (path; regularKeyBindings.map!(b => b.commands)
-                                         .joiner
-                                         .filter!(c => c[0] == "record" && c.length == 2)
-                                         .map!(c => expandPath(c[1]))
-                                         .filter!(p => p.exists))
+    foreach (path; regularKeyBindings.map!(b => b.commands)
+                                        .joiner
+                                        .filter!(c => c[0] == "record" && c.length == 2)
+                                        .map!(c => expandPath(c[1]))
+                                        .filter!(p => p.exists))
+    {
+        foreach (line; path.readText.replace('\r', "").splitter('\n'))
         {
-            foreach (line; path.readText.replace('\r', "").splitter('\n'))
+            auto parts = line.findSplit(" ");
+
+            if (parts[0].length == 0)
+                continue;
+
+            auto vkCode = parts[0].to!DWORD;
+
+            auto commands = parts[2].parseCommaDelimitedCommands();
+
+            auto recording = Recording(vkCode, commands, path);
+            auto recordingRange = recordings.find!(r => r.vkCode == vkCode);
+            if (!recordingRange.empty)
             {
-                auto parts = line.findSplit(" ");
-
-                if (parts[0].length == 0)
-                    continue;
-
-                auto vkCode = parts[0].to!DWORD.assumeWontThrow;
-
-                auto commands = parts[2].parseCommaDelimitedCommands();
-
-                auto recording = Recording(vkCode, commands, path);
-                auto recordingRange = recordings.find!(r => r.vkCode == vkCode);
-                if (!recordingRange.empty)
-                {
-                    showWarning(format!"More than one recording found for key code '%d', last one will be used!"(vkCode).assumeWontThrow);
-                    recordingRange[0] = recording;
-                }
-                else
-                {
-                    recordings ~= recording;
-                }
+                showWarning(format!"More than one recording found for key code '%d', last one will be used!"(vkCode));
+                recordingRange[0] = recording;
+            }
+            else
+            {
+                recordings ~= recording;
             }
         }
-    }().assumeWontThrow;
+    }
 }
 
 void startReplaying()
@@ -90,13 +83,12 @@ void replay(DWORD vkCode)
 {
     import std.algorithm : find;
     import std.range : empty;
-    import std.exception : assumeWontThrow;
     import std.format : format;
 
     auto recordingRange = recordings.find!(r => r.vkCode == vkCode);
     if (recordingRange.empty)
     {
-        showWarning(format!"No recording found for key code '%d'!"(vkCode).assumeWontThrow);
+        showWarning(format!"No recording found for key code '%d'!"(vkCode));
     }
     else
     {
@@ -119,7 +111,6 @@ void stopRecording()
     import std.range: empty;
     import std.array : join;
     import std.file : write, exists;
-    import std.exception : assumeWontThrow;
     import std.path : dirName;
 
     auto recordingRange = recordings.find!(r => r.vkCode == activeRecording.vkCode);
@@ -134,7 +125,7 @@ void stopRecording()
 
     if (activeRecording.path != null)
     {
-        auto recordingText = recordings.filter!(r => r.path == activeRecording.path).map!(r => r.toString).join.assumeWontThrow;
+        auto recordingText = recordings.filter!(r => r.path == activeRecording.path).map!(r => r.toString).join;
 
         if (!activeRecording.path.dirName.exists)
         {
@@ -142,7 +133,7 @@ void stopRecording()
         }
         else
         {
-            activeRecording.path.write(recordingText).assumeWontThrow;
+            activeRecording.path.write(recordingText);
         }
     }
 

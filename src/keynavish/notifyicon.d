@@ -4,8 +4,6 @@ import keynavish;
 
 import core.sys.windows.windows;
 
-@system nothrow:
-
 NOTIFYICONDATA notifyIconData;
 HMENU popupMenu;
 HKEY registryKey;
@@ -102,7 +100,6 @@ enum MenuItem
 
 void createPopUpMenu()
 {
-    import std.exception : assumeWontThrow;
     import std.format : format;
     import std.conv : to;
 
@@ -115,7 +112,7 @@ void createPopUpMenu()
 
     wchar* formatTitle(alias formatString, Args...)(Args args)
     {
-        return format!(formatString ~ "\0")(args).to!wstring.assumeWontThrow.dup.ptr;
+        return format!(formatString ~ "\0")(args).to!wstring.dup.ptr;
     }
 
     void addSeparator()
@@ -161,7 +158,6 @@ void toggleLaunchValue()
     import std.algorithm : map;
     import std.string : join;
     import std.conv : to;
-    import std.exception : assumeWontThrow;
 
     if (launchValueExists)
     {
@@ -170,7 +166,7 @@ void toggleLaunchValue()
     else
     {
         //HACK: We should properly quote the strings when necessary
-        auto launchValue = Runtime.args.map!(s => '"' ~ s ~ '"').join(' ').to!wstring.dup.assumeWontThrow;
+        auto launchValue = Runtime.args.map!(s => '"' ~ s ~ '"').join(' ').to!wstring.dup;
 
         RegSetValueEx(registryKey, programName, 0, REG_SZ, cast(ubyte*) launchValue.ptr, cast(uint) (launchValue.length * wchar.sizeof));
     }
@@ -182,7 +178,6 @@ void editConfigFile()
     import std.range : empty;
     import std.algorithm : map, find;
     import std.conv : to;
-    import std.exception : assumeWontThrow;
     import std.format : format;
 
     string path;
@@ -193,7 +188,7 @@ void editConfigFile()
         path = configFilePaths[0].expandPath;
 
         auto result = MessageBox(null,
-                                 format!"No config file found, one will be created at %s. Would you like to download an example config?"(path).to!wstring.ptr.assumeWontThrow,
+                                 format!"No config file found, one will be created at %s. Would you like to download an example config?"(path).to!wstring.ptr,
                                  programName,
                                  MB_YESNOCANCEL);
         if (result == IDCANCEL)
@@ -202,11 +197,11 @@ void editConfigFile()
         }
         else if (result == IDYES)
         {
-            URLDownloadToFileW(null, exampleConfigUrl, (path ~ "\0").to!wstring.ptr, 0, null).assumeWontThrow;
+            URLDownloadToFileW(null, exampleConfigUrl, (path ~ "\0").to!wstring.ptr, 0, null);
         }
         else if (result == IDNO)
         {
-            write(path, []).assumeWontThrow;
+            write(path, []);
         }
         else
         {
@@ -218,5 +213,5 @@ void editConfigFile()
         path = configFileRange[0];
     }
 
-    ShellExecute(null, "open", (path ~ "\0").to!wstring.ptr.assumeWontThrow, null, null, SW_SHOWNORMAL);
+    ShellExecute(null, "open", (path ~ "\0").to!wstring.ptr, null, null, SW_SHOWNORMAL);
 }

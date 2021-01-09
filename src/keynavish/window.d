@@ -3,8 +3,6 @@ module keynavish.window;
 import core.sys.windows.windows;
 import keynavish;
 
-@system nothrow:
-
 HWND windowHandle;
 
 bool active;
@@ -14,7 +12,7 @@ void registerWindowClass()
 {
     WNDCLASSEX windowsClassEx;
     windowsClassEx.style = CS_HREDRAW | CS_VREDRAW;
-    windowsClassEx.lpfnWndProc = &windowProc;
+    windowsClassEx.lpfnWndProc = &exceptionHandlerWrapper!windowProc;
     windowsClassEx.hInstance = GetModuleHandle(null);
     windowsClassEx.hbrBackground = CreateSolidBrush(windowColourKey);
     windowsClassEx.lpszClassName = windowClassName.ptr;

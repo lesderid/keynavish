@@ -4,8 +4,6 @@ import core.sys.windows.windows;
 import std.typecons : Nullable, BitFlags;
 import keynavish;
 
-@system nothrow:
-
 static this()
 {
     registerKeyBinding("clear");
@@ -77,27 +75,25 @@ KeyBinding[] startKeyBindings;
 
 void registerKeyboardHook()
 {
-    SetWindowsHookEx(WH_KEYBOARD_LL, &lowLevelKeyboardProc, GetModuleHandle(null), 0);
+    SetWindowsHookEx(WH_KEYBOARD_LL, &exceptionHandlerWrapper!lowLevelKeyboardProc, GetModuleHandle(null), 0);
 }
 
 Nullable!KeyBinding parseKeyBindingString(string bindingString)
 {
     import std.algorithm : findSplit, map, until, startsWith;
-    import std.csv : csvReader, Malformed;
     import std.array : array;
     import std.format : format;
-    import std.exception : assumeWontThrow;
     import std.conv : to;
     import std.string : strip, split;
 
     //strip comments, whitespace, and stop if string is empty
-    bindingString = bindingString.until('#').to!string.assumeWontThrow.strip;
+    bindingString = bindingString.until('#').to!string.strip;
     if (bindingString.length == 0)
     {
         return typeof(return)();
     }
 
-    if (bindingString.startsWith("daemonize", "clear", "loadconfig").assumeWontThrow)
+    if (bindingString.startsWith("daemonize", "clear", "loadconfig"))
     {
         auto command = bindingString.parseCommaDelimitedCommands()[0];
         verifyCommand(command) && processCommand(command);
@@ -106,7 +102,7 @@ Nullable!KeyBinding parseKeyBindingString(string bindingString)
 
     auto parts = bindingString.findSplit(" ");
 
-    string[] keyStrings = parts[0].split('+').assumeWontThrow;
+    string[] keyStrings = parts[0].split('+');
 
     string[][] commands = parts[2].parseCommaDelimitedCommands();
 
