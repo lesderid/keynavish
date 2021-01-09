@@ -101,7 +101,7 @@ enum MenuItem
 void createPopUpMenu()
 {
     import std.format : format;
-    import std.conv : to;
+    import std.utf : toUTF16z;
 
     if (popupMenu)
     {
@@ -110,11 +110,6 @@ void createPopUpMenu()
 
     popupMenu = CreatePopupMenu();
 
-    wchar* formatTitle(alias formatString, Args...)(Args args)
-    {
-        return format!(formatString ~ "\0")(args).to!wstring.dup.ptr;
-    }
-
     void addSeparator()
     {
         InsertMenu(popupMenu, -1, MF_BYPOSITION | MF_SEPARATOR, 0, null);
@@ -122,12 +117,12 @@ void createPopUpMenu()
 
     void addStringItem(alias formatString, MenuItem menuItem, Args...)(Args args)
     {
-        InsertMenu(popupMenu, -1, MF_BYPOSITION | MF_STRING, menuItem, formatTitle!formatString(args));
+        InsertMenu(popupMenu, -1, MF_BYPOSITION | MF_STRING, menuItem, format!formatString(args).toUTF16z);
     }
 
     void addCheckboxItem(alias formatString, MenuItem menuItem, Args...)(bool checked, Args args)
     {
-        InsertMenu(popupMenu, -1, MF_BYPOSITION | (checked ? MF_CHECKED : MF_UNCHECKED), menuItem, formatTitle!formatString(args));
+        InsertMenu(popupMenu, -1, MF_BYPOSITION | (checked ? MF_CHECKED : MF_UNCHECKED), menuItem, format!formatString(args).toUTF16z);
     }
 
     addStringItem!("About %s (%s)...", MenuItem.About)(programName, gitVersion);
@@ -149,7 +144,7 @@ void openRegistryKey()
 
 bool launchValueExists()
 {
-    return RegQueryValueExW(registryKey, programName, null, null, null, null) != ERROR_FILE_NOT_FOUND;
+    return RegQueryValueExW(registryKey, programName.ptr, null, null, null, null) != ERROR_FILE_NOT_FOUND;
 }
 
 void toggleLaunchValue()
@@ -158,17 +153,18 @@ void toggleLaunchValue()
     import std.algorithm : map;
     import std.string : join;
     import std.conv : to;
+    import std.utf : toUTF16z;
 
     if (launchValueExists)
     {
-        RegDeleteValue(registryKey, programName);
+        RegDeleteValue(registryKey, programName.ptr);
     }
     else
     {
         //HACK: We should properly quote the strings when necessary
-        auto launchValue = Runtime.args.map!(s => '"' ~ s ~ '"').join(' ').to!wstring.dup;
+        auto launchValue = Runtime.args.map!(s => '"' ~ s ~ '"').join(' ');
 
-        RegSetValueEx(registryKey, programName, 0, REG_SZ, cast(ubyte*) launchValue.ptr, cast(uint) (launchValue.length * wchar.sizeof));
+        RegSetValueEx(registryKey, programName.ptr, 0, REG_SZ, cast(ubyte*) launchValue.toUTF16z, cast(uint) (launchValue.length * wchar.sizeof));
     }
 }
 
@@ -177,7 +173,7 @@ void editConfigFile()
     import std.file : exists, write;
     import std.range : empty;
     import std.algorithm : map, find;
-    import std.conv : to;
+    import std.utf : toUTF16z;
     import std.format : format;
 
     string path;
@@ -188,8 +184,8 @@ void editConfigFile()
         path = configFilePaths[0].expandPath;
 
         auto result = MessageBox(null,
-                                 format!"No config file found, one will be created at %s. Would you like to download an example config?"(path).to!wstring.ptr,
-                                 programName,
+                                 format!"No config file found, one will be created at %s. Would you like to download an example config?"(path).toUTF16z,
+                                 programName.ptr,
                                  MB_YESNOCANCEL);
         if (result == IDCANCEL)
         {
@@ -197,7 +193,7 @@ void editConfigFile()
         }
         else if (result == IDYES)
         {
-            URLDownloadToFileW(null, exampleConfigUrl, (path ~ "\0").to!wstring.ptr, 0, null);
+            URLDownloadToFileW(null, exampleConfigUrl, path.toUTF16z, 0, null);
         }
         else if (result == IDNO)
         {
@@ -213,5 +209,5 @@ void editConfigFile()
         path = configFileRange[0];
     }
 
-    ShellExecute(null, "open", (path ~ "\0").to!wstring.ptr, null, null, SW_SHOWNORMAL);
+    ShellExecute(null, "open", path.toUTF16z, null, null, SW_SHOWNORMAL);
 }

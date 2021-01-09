@@ -10,7 +10,7 @@ enum penWidth = 1;
 
 static assert(windowColourKey != penColour, "Colour key and pen colour can't be the same");
 
-enum programName = "keynavish";
+enum programName = "keynavish"w;
 enum programInfo = programName ~ q"EOS
  – Control the mouse with the keyboard, on Windows.
 

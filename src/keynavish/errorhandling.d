@@ -2,35 +2,35 @@ module keynavish.errorhandling;
 
 import keynavish;
 
-void showError(Stringish)(Stringish message, string title = programName)
+void showError(Stringish)(Stringish message)
 {
     import core.sys.windows.windows : MessageBox, MB_ICONERROR;
-    import std.conv : to;
+    import std.utf : toUTF16z;
 
-    MessageBox(null, message.to!wstring.ptr, title.to!wstring.ptr, MB_ICONERROR);
+    MessageBox(null, message.toUTF16z, programName.ptr, MB_ICONERROR);
 }
 
-void showWarning(Stringish)(Stringish message, string title = programName)
+void showWarning(Stringish)(Stringish message)
 {
     import core.sys.windows.windows : MessageBox, MB_ICONWARNING;
-    import std.conv : to;
+    import std.utf : toUTF16z;
 
-    MessageBox(null, message.to!wstring.ptr, title.to!wstring.ptr, MB_ICONWARNING);
+    MessageBox(null, message.toUTF16z, programName.ptr, MB_ICONWARNING);
 }
 
-void showInfo(Stringish)(Stringish message, string title = programName)
+void showInfo(Stringish)(Stringish message)
 {
     import core.sys.windows.windows : MessageBox, MB_ICONINFORMATION;
-    import std.conv : to;
+    import std.utf : toUTF16z;
 
-    MessageBox(null, message.to!wstring.ptr, title.to!wstring.ptr, MB_ICONINFORMATION);
+    MessageBox(null, message.toUTF16z, programName.ptr, MB_ICONINFORMATION);
 }
 
 template exceptionHandlerWrapper(alias func)
 {
     import std.traits;
     import std.exception;
-    import std.conv : to;
+    import std.utf : toUTF16z;
     import core.sys.windows.windows : MessageBox, MB_ICONERROR, MB_SYSTEMMODAL;
 
     extern(Windows)
@@ -44,7 +44,7 @@ template exceptionHandlerWrapper(alias func)
         {
             auto message = "Unhandled exception: " ~ t.message.assumeWontThrow ~ "\r\n\r\n" ~ unhandledExceptionMessage;
 
-            MessageBox(null, message.to!wstring.ptr, programName, MB_ICONERROR | MB_SYSTEMMODAL).assumeWontThrow;
+            MessageBox(null, message.toUTF16z, programName.ptr, MB_ICONERROR | MB_SYSTEMMODAL).assumeWontThrow;
 
             assert(0);
         }

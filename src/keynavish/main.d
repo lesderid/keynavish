@@ -96,16 +96,17 @@ void showHelp(std.getopt.Option[] getoptOptions)
 {
     import std.getopt : defaultGetoptFormatter;
     import std.array : appender;
+    import std.conv : to;
 
     auto helpAppender = appender!(char[]);
-    defaultGetoptFormatter(helpAppender, programInfo ~ "\r\n\r\n" ~ usageHelpString, getoptOptions);
+    defaultGetoptFormatter(helpAppender, (programInfo ~ "\r\n\r\n"w ~ usageHelpString).to!string, getoptOptions);
 
     showInfo(helpAppender[]);
 }
 
 void showVersion()
 {
-    showInfo(programName ~ " " ~ gitVersion ~ "\0");
+    showInfo(programName ~ " " ~ gitVersion);
 }
 
 void messageLoop()

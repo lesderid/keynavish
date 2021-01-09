@@ -24,7 +24,7 @@ void createWindow()
 {
     windowHandle = CreateWindowEx(WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TRANSPARENT,
                                   windowClassName.ptr,
-                                  "keynavish"w.ptr,
+                                  programName.ptr,
                                   WS_POPUP,
                                   0,
                                   0,
