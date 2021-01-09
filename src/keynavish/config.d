@@ -14,7 +14,7 @@ enum programName = "keynavish"w;
 enum programInfo = programName ~ q"EOS
  – Control the mouse with the keyboard, on Windows.
 
-Copyright © 2020, Les De Ridder <les@lesderid.net>
+Copyright © 2021, Les De Ridder <les@lesderid.net>
 EOS" ~ "Home page: <" ~ programUrl ~ ">";
 enum programUrl = "https://github.com/lesderid/keynavish";
 

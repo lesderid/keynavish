@@ -1,7 +1,7 @@
 name "keynavish"
 description "Control the mouse with the keyboard, on Windows."
 authors "lesderid"
-copyright "Copyright © 2020, Les De Ridder"
+copyright "Copyright © 2021, Les De Ridder"
 license "GPL-2.0"
 
 preBuildCommands "generate-version-info.bat"
