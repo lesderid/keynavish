@@ -10,3 +10,5 @@ libs "User32" "Gdi32"
 stringImportPaths "."
 
 targetPath "out"
+
+lflags "/SUBSYSTEM:WINDOWS"
