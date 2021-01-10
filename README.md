@@ -7,8 +7,9 @@ for Windows. It is fully compatible with the original (modulo
 [bugs](https://github.com/lesderid/keynavish/issues?q=is%3Aopen+is%3Aissue+label%3Acompatibility)),
 so you can use the same configuration files for both programs.
 
-keynavish works on Windows 8.1 and later. Older versions might work too
-but are unsupported.
+keynavish works on Windows XP and later, but only versions of Windows
+that still receive support from Microsoft (currently 8.1 and 10) are
+officially supported.
 
 ## Installing
 
