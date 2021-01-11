@@ -2,6 +2,7 @@ module keynavish.grid;
 
 import core.sys.windows.windows : RECT, HDC, HPEN;
 import std.container : SList;
+import std.typecons : Tuple;
 import keynavish;
 
 struct Grid
@@ -16,8 +17,19 @@ private SList!Grid gridStack;
 
 HPEN pen;
 
-int screenWidth;
-int screenHeight;
+@property
+Tuple!(int, "width", int, "height") deviceResolution()
+{
+    import core.sys.windows.windows : GetDC, GetDeviceCaps, HORZRES, VERTRES;
+
+    auto rootDeviceContext = GetDC(null);
+
+    auto resolution = typeof(return)();
+    resolution.width = GetDeviceCaps(rootDeviceContext, HORZRES);
+    resolution.height = GetDeviceCaps(rootDeviceContext, VERTRES);
+
+    return resolution;
+}
 
 const(Grid) grid()
 {
@@ -42,7 +54,9 @@ void tryPopGrid()
 
 void resetGrid()
 {
-    grid_.rect = RECT(0, 0, screenWidth, screenHeight);
+    auto resolution = deviceResolution;
+
+    grid_.rect = RECT(0, 0, resolution.width, resolution.height);
     grid_.rows = 2;
     grid_.columns = 2;
     gridStack = typeof(gridStack)();

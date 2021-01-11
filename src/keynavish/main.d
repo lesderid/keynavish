@@ -35,10 +35,6 @@ static this()
     registerKeyboardHook();
 
     pen = CreatePen(PS_SOLID, penWidth, penColour);
-
-    auto rootDeviceContext = GetDC(null);
-    screenWidth = GetDeviceCaps(rootDeviceContext, HORZRES);
-    screenHeight = GetDeviceCaps(rootDeviceContext, VERTRES);
 }
 
 extern(C)

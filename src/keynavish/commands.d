@@ -34,13 +34,17 @@ private void redrawWindow()
 
 private void start()
 {
+    import core.sys.windows.windows : MoveWindow;
+
+    resetGrid();
+    MoveWindow(windowHandle, 0, 0, grid.rect.width, grid.rect.height, false);
+
     showWindow();
 }
 
 private void end()
 {
     hideWindow();
-    resetGrid();
 }
 
 private void toggleStart()
@@ -140,6 +144,8 @@ private void move(Direction direction, string arg)
 
     if (!active) return;
 
+    auto resolution = deviceResolution;
+
     auto value = getCutMoveValue(direction, arg != null ? arg : "1");
 
     Grid newGrid = grid;
@@ -157,10 +163,10 @@ private void move(Direction direction, string arg)
         case down:
             newGrid.rect.top += value;
             newGrid.rect.bottom += value;
-            if (newGrid.rect.bottom > screenHeight)
+            if (newGrid.rect.bottom > resolution.height)
             {
-                newGrid.rect.top -= (newGrid.rect.bottom - screenHeight);
-                newGrid.rect.bottom = screenHeight;
+                newGrid.rect.top -= (newGrid.rect.bottom - resolution.height);
+                newGrid.rect.bottom = resolution.height;
             }
             break;
         case left:
@@ -175,10 +181,10 @@ private void move(Direction direction, string arg)
         case right:
             newGrid.rect.left += value;
             newGrid.rect.right += value;
-            if (newGrid.rect.right > screenWidth)
+            if (newGrid.rect.right > resolution.width)
             {
-                newGrid.rect.left -= (newGrid.rect.right - screenWidth);
-                newGrid.rect.right = screenWidth;
+                newGrid.rect.left -= (newGrid.rect.right - resolution.width);
+                newGrid.rect.right = resolution.width;
             }
             break;
     }
@@ -195,13 +201,15 @@ private void warp()
 
     if (!active) return;
 
+    auto resolution = deviceResolution;
+
     auto middleX = grid.rect.left + grid.rect.width / 2;
     auto middleY = grid.rect.top + grid.rect.height / 2;
 
     INPUT input;
     input.type = INPUT_MOUSE;
-    input.mi.dx = middleX * 65536 / screenWidth;
-    input.mi.dy = middleY * 65536 / screenHeight;
+    input.mi.dx = middleX * 65536 / resolution.width;
+    input.mi.dy = middleY * 65536 / resolution.height;
     input.mi.dwFlags = MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | draggingFlag;
     SendInput(1, &input, INPUT.sizeof);
 }

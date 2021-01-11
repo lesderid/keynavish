@@ -22,14 +22,16 @@ void registerWindowClass()
 
 void createWindow()
 {
+    auto resolution = deviceResolution;
+
     windowHandle = CreateWindowEx(WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TRANSPARENT,
                                   windowClassName.ptr,
                                   programName.ptr,
                                   WS_POPUP,
                                   0,
                                   0,
-                                  screenWidth,
-                                  screenHeight,
+                                  resolution.width,
+                                  resolution.height,
                                   null,
                                   null,
                                   GetModuleHandle(null),
