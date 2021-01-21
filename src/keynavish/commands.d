@@ -547,8 +547,6 @@ void processCommand(string[] command)
         case "restart":
             restart();
             break;
-        case "ignore":
-            break;
         case "warp":
             warp();
             break;
@@ -711,8 +709,6 @@ bool verifyCommand(string[] command)
             break;
         case "grid-nav":
             if (!argCount(1, 1)) return false;
-            break;
-        case "ignore":
             break;
         default:
             showError("Unknown command: " ~ command[0]);
