@@ -51,7 +51,7 @@ IF ERRORLEVEL 1 (
 
         		VALUE "CompanyName", "Les De Ridder" ^
 
-        		VALUE "LegalCopyright", "Copyright © 2021, Les De Ridder <les@lesderid.net>" ^
+        		VALUE "LegalCopyright", "© 2021, Les De Ridder <les@lesderid.net>" ^
 
         		VALUE "ProductName", "keynavish" ^
 
