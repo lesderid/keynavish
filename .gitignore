@@ -4,4 +4,4 @@
 /.vs/
 /enc_temp_folder/
 /.dub/
-/src/keynavish/versioninfo.d
+/src/keynavish/versioninfo.*

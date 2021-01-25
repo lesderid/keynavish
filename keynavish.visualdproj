@@ -110,7 +110,7 @@
   <libfiles />
   <libpaths />
   <deffile />
-  <resfile />
+  <resfile>src\keynavish\versioninfo.res</resfile>
   <exefile>$(OutDir)\$(ProjectName).exe</exefile>
   <pdbfile>$(IntDir)\$(SafeProjectName).pdb</pdbfile>
   <impfile>$(IntDir)\$(SafeProjectName).lib</impfile>
@@ -233,7 +233,7 @@
   <libfiles />
   <libpaths />
   <deffile />
-  <resfile />
+  <resfile>src\keynavish\versioninfo.res</resfile>
   <exefile>$(OutDir)\$(ProjectName).exe</exefile>
   <pdbfile>$(IntDir)\$(SafeProjectName).pdb</pdbfile>
   <impfile>$(IntDir)\$(SafeProjectName).lib</impfile>
@@ -356,7 +356,7 @@
   <libfiles />
   <libpaths />
   <deffile />
-  <resfile />
+  <resfile>src\keynavish\versioninfo.res</resfile>
   <exefile>$(OutDir)\$(ProjectName).exe</exefile>
   <pdbfile>$(IntDir)\$(SafeProjectName).pdb</pdbfile>
   <impfile>$(IntDir)\$(SafeProjectName).lib</impfile>
@@ -479,7 +479,7 @@
   <libfiles />
   <libpaths />
   <deffile />
-  <resfile />
+  <resfile>src\keynavish\versioninfo.res</resfile>
   <exefile>$(OutDir)\$(ProjectName).exe</exefile>
   <pdbfile>$(IntDir)\$(SafeProjectName).pdb</pdbfile>
   <impfile>$(IntDir)\$(SafeProjectName).lib</impfile>

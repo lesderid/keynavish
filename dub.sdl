@@ -12,3 +12,4 @@ stringImportPaths "."
 targetPath "out"
 
 lflags "/SUBSYSTEM:WINDOWS"
+sourceFiles "src/keynavish/versioninfo.res"
