@@ -34,7 +34,8 @@ static this()
     registerWindowClass();
     registerKeyboardHook();
 
-    pen = CreatePen(PS_SOLID, penWidth, penColour);
+    mainPen = CreatePen(PS_SOLID, mainPenWidth, mainPenColour);
+    borderPen = CreatePen(PS_SOLID, borderPenWidth * 2 + mainPenWidth, borderPenColour);
 }
 
 extern(C)

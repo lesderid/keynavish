@@ -5,10 +5,13 @@ import core.sys.windows.windows;
 enum windowClassName = "keynavish-grid"w;
 enum windowColourKey = RGB(255, 0, 255);
 
-enum penColour = RGB(30, 64, 64);
-enum penWidth = 1;
+enum mainPenColour = RGB(30, 64, 64);
+enum mainPenWidth = 1;
+enum borderPenColour = RGB(255, 255, 255);
+enum borderPenWidth = 1;
 
-static assert(windowColourKey != penColour, "Colour key and pen colour can't be the same");
+static assert(windowColourKey != mainPenColour, "Colour key and main pen colour can't be the same");
+static assert(windowColourKey != borderPenColour, "Colour key and border pen colour can't be the same");
 
 enum programName = "keynavish"w;
 enum programInfo = programName ~ q"EOS

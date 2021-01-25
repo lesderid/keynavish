@@ -15,7 +15,8 @@ struct Grid
 private Grid grid_;
 private SList!Grid gridStack;
 
-HPEN pen;
+HPEN mainPen;
+HPEN borderPen;
 
 @property
 Tuple!(int, "width", int, "height") deviceResolution()
@@ -83,8 +84,6 @@ void paintGrid(HDC deviceContext)
     import std.algorithm : map;
     import std.range : repeat, join, array;
 
-    SelectObject(deviceContext, pen);
-
     auto pointArrays = splitGrid.map!(r => [
         POINT(r.left, r.top),
         POINT(r.right, r.top),
@@ -94,5 +93,10 @@ void paintGrid(HDC deviceContext)
     ]).join;
 
     DWORD[] sizes = uint(5).repeat(pointArrays.length).array;
+
+    SelectObject(deviceContext, borderPen);
+    PolyPolyline(deviceContext, pointArrays.ptr, sizes.ptr, grid.columns * grid.rows);
+
+    SelectObject(deviceContext, mainPen);
     PolyPolyline(deviceContext, pointArrays.ptr, sizes.ptr, grid.columns * grid.rows);
 }
