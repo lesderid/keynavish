@@ -1,10 +1,14 @@
 # keynavish
 
+[![Latest release](https://img.shields.io/github/v/release/lesderid/keynavish?sort=semver)](https://github.com/lesderid/keynavish/releases/latest)
+[![CI build status](https://img.shields.io/github/workflow/status/lesderid/keynavish/CI)](https://github.com/lesderid/keynavish/actions?query=workflow%3ACI)
+[![Compatibility issues](https://img.shields.io/github/issues/lesderid/keynavish/compatibility)](https://github.com/lesderid/keynavish/labels/compatibility)
+
 Control the mouse with the keyboard, on Windows.
 
 This is a rewrite of [keynav](https://github.com/jordansissel/keynav)
 for Windows. It is fully compatible with the original (modulo
-[bugs](https://github.com/lesderid/keynavish/issues?q=is%3Aopen+is%3Aissue+label%3Acompatibility)),
+[bugs](https://github.com/lesderid/keynavish/labels/compatibility)),
 so you can use the same configuration files for both programs.
 
 keynavish works on Windows XP and later, but only versions of Windows
