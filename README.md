@@ -15,6 +15,12 @@ keynavish works on Windows XP and later, but only versions of Windows
 that still receive support from Microsoft (currently 8.1 and 10) are
 officially supported.
 
+## Demo
+
+[![Demo](https://lesderid.net/keynavish-demo.gif)](https://lesderid.net/keynavish-demo.webm)
+
+(click for full quality video)
+
 ## Installing
 
 You can 'install' keynavish by downloading the [latest
