@@ -33,7 +33,9 @@ the notification icon context menu.
 Configuration format: [keynav
 documentation](https://github.com/jordansissel/keynav/blob/master/keynav.pod)
 
-On startup, keynavish loads a set of default keybindings, and then tries
+On startup, keynavish loads a set of
+[default keybindings](https://github.com/lesderid/keynavish/blob/9cce3b7c8ae03791f8ef3aedcc3015bde2f8a054/src/keynavish/keyboardinput.d#L11-L51)
+, and then tries
 to load the following configuration files:
 
 * `~/.keynavrc`
