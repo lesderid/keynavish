@@ -8,6 +8,8 @@ HWND windowHandle;
 bool active;
 bool quitting;
 
+UINT taskbarCreatedMessage;
+
 void registerWindowClass()
 {
     WNDCLASSEX windowsClassEx;
@@ -64,6 +66,9 @@ LRESULT windowProc(HWND handle, UINT message, WPARAM wParam, LPARAM lParam)
 
     switch (message)
     {
+        case WM_CREATE:
+            taskbarCreatedMessage = RegisterWindowMessage("TaskbarCreated");
+            goto default;
         case WM_PAINT:
             PAINTSTRUCT ps;
             auto deviceContext = BeginPaint(handle, &ps);
@@ -78,6 +83,12 @@ LRESULT windowProc(HWND handle, UINT message, WPARAM wParam, LPARAM lParam)
             handleNotifyIconMessage(wParam, lParam);
             break;
         default:
+            if (message == taskbarCreatedMessage)
+            {
+                removeNotifyIcon();
+                addNotifyIcon();
+            }
+
             return DefWindowProc(handle, message, wParam, lParam);
     }
     return 0;
