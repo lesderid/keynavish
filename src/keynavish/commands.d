@@ -27,9 +27,9 @@ Direction commandToDirection(string commandString)
 
 private void redrawWindow()
 {
-    //HACK: We should redraw properly somehow (RedrawWindow with RDW_INVALIDATE | RDW_UPDATENOW doesn't remove old grid)
-    hideWindow();
-    showWindow();
+    import core.sys.windows.windows : InvalidateRect;
+
+    InvalidateRect(windowHandle, null, true);
 }
 
 private void start()
