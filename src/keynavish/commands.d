@@ -301,12 +301,12 @@ private void doubleClick(string button)
             inputs[1].mi.dwFlags = MOUSEEVENTF_LEFTUP;
             break;
         case "2":
-            inputs[0].mi.dwFlags = MOUSEEVENTF_RIGHTDOWN;
-            inputs[1].mi.dwFlags = MOUSEEVENTF_RIGHTUP;
-            break;
-        case "3":
             inputs[0].mi.dwFlags = MOUSEEVENTF_MIDDLEDOWN;
             inputs[1].mi.dwFlags = MOUSEEVENTF_MIDDLEUP;
+            break;
+        case "3":
+            inputs[0].mi.dwFlags = MOUSEEVENTF_RIGHTDOWN;
+            inputs[1].mi.dwFlags = MOUSEEVENTF_RIGHTUP;
             break;
         default:
             showError("Invalid mouse button: " ~ button);
