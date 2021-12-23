@@ -267,14 +267,14 @@ private void click(string button)
             inputs[0].mi.dwFlags = MOUSEEVENTF_MIDDLEDOWN;
             inputs[1].mi.dwFlags = MOUSEEVENTF_MIDDLEUP;
             break;
-	case "4":
+        case "4":
             inputs[0].mi.dwFlags = MOUSEEVENTF_WHEEL;
-	    inputs[0].mi.mouseData = WHEEL_DELTA;
+            inputs[0].mi.mouseData = WHEEL_DELTA;
             inputs[1].mi.dwFlags = 0;
             break;
-	case "5":
+        case "5":
             inputs[0].mi.dwFlags = MOUSEEVENTF_WHEEL;
-	    inputs[0].mi.mouseData = -WHEEL_DELTA;
+            inputs[0].mi.mouseData = -WHEEL_DELTA;
             inputs[1].mi.dwFlags = 0;
             break;
         default:
