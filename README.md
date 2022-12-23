@@ -1,7 +1,7 @@
 # keynavish
 
 [![Latest release](https://img.shields.io/github/v/release/lesderid/keynavish?sort=semver)](https://github.com/lesderid/keynavish/releases/latest)
-[![CI build status](https://img.shields.io/github/workflow/status/lesderid/keynavish/CI)](https://github.com/lesderid/keynavish/actions?query=workflow%3ACI)
+[![CI build status](https://img.shields.io/github/actions/workflow/status/lesderid/keynavish/ci.yml)](https://github.com/lesderid/keynavish/actions?query=workflow%3ACI)
 [![Compatibility issues](https://img.shields.io/github/issues/lesderid/keynavish/compatibility)](https://github.com/lesderid/keynavish/labels/compatibility)
 
 Control the mouse with the keyboard, on Windows.
