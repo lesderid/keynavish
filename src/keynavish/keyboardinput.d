@@ -93,7 +93,7 @@ Nullable!KeyBinding parseKeyBindingString(string bindingString)
         return typeof(return)();
     }
 
-    if (bindingString.startsWith("daemonize", "clear", "loadconfig"))
+    if (bindingString.startsWith("daemonize", "clear", "loadconfig", "x-set-delay"))
     {
         auto command = bindingString.parseCommaDelimitedCommands()[0];
         verifyCommand(command) && processCommand(command);

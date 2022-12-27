@@ -5,6 +5,7 @@ import keynavish;
 import core.sys.windows.windows : LONG, DWORD;
 
 DWORD draggingFlag;
+long delayMilliseconds = 0;
 
 enum Direction
 {
@@ -247,6 +248,8 @@ private void windowZoom()
 private void click(string button)
 {
     import core.sys.windows.winuser;
+    import core.thread.osthread : Thread;
+    import core.time : dur;
 
     INPUT[2] inputs;
 
@@ -282,12 +285,23 @@ private void click(string button)
             break;
     }
 
-    SendInput(2, inputs.ptr, INPUT.sizeof);
+    if (delayMilliseconds == 0)
+    {
+        SendInput(2, inputs.ptr, INPUT.sizeof);
+    }
+    else
+    {
+        SendInput(1, inputs.ptr, INPUT.sizeof);
+        Thread.sleep(dur!("msecs")(delayMilliseconds));
+        SendInput(1, inputs.ptr + 1, INPUT.sizeof);
+    }
 }
 
 private void doubleClick(string button)
 {
     import core.sys.windows.winuser;
+    import core.thread.osthread : Thread;
+    import core.time : dur;
 
     INPUT[4] inputs;
 
@@ -316,7 +330,20 @@ private void doubleClick(string button)
     inputs[2] = inputs[0];
     inputs[3] = inputs[1];
 
-    SendInput(4, inputs.ptr, INPUT.sizeof);
+    if (delayMilliseconds == 0)
+    {
+        SendInput(4, inputs.ptr, INPUT.sizeof);
+    }
+    else
+    {
+        SendInput(1, inputs.ptr, INPUT.sizeof);
+        Thread.sleep(dur!("msecs")(delayMilliseconds));
+        SendInput(1, inputs.ptr + 1, INPUT.sizeof);
+
+        SendInput(1, inputs.ptr + 2, INPUT.sizeof);
+        Thread.sleep(dur!("msecs")(delayMilliseconds));
+        SendInput(1, inputs.ptr + 3, INPUT.sizeof);
+    }
 }
 
 private void drag(string button, string modifiers)
@@ -513,6 +540,14 @@ private void clear()
 {
     startKeyBindings = [];
     regularKeyBindings = [];
+    delayMilliseconds = 0;
+}
+
+private void setDelay(string delayString)
+{
+    import std.conv : to;
+
+    delayMilliseconds = delayString.to!long;
 }
 
 void processCommands(string[][] commands)
@@ -610,6 +645,9 @@ void processCommand(string[] command)
             break;
         case "daemonize":
             //we ignore this as we always add a notification icon
+            break;
+        case "x-set-delay":
+            setDelay(command[1]);
             break;
         case "clear":
             clear();
@@ -718,6 +756,9 @@ bool verifyCommand(string[] command)
             if (!argCount(0, 0)) return false;
             break;
         case "grid-nav":
+            if (!argCount(1, 1)) return false;
+            break;
+        case "x-set-delay":
             if (!argCount(1, 1)) return false;
             break;
         default:
