@@ -15,5 +15,11 @@ jobs:
           uses: dlang-community/setup-dlang@v1
           with:
             compiler: dmd-latest
-        - name: Build keynavish
-          run: dub build
+        - name: Build keynavish (x64, debug)
+          run: dub build -a=x86_64
+        - name: Build keynavish (x86, debug)
+          run: dub build -a=x86
+        - name: Build keynavish (x64, release)
+          run: dub build -b=release -a=x86_64
+        - name: Build keynavish (x86, release)
+          run: dub build -b=release -a=x86
