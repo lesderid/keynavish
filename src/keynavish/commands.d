@@ -426,9 +426,14 @@ private void runShellCommand(string shellCommand)
 
 void loadAllConfigs()
 {
+    import std.file : thisExePath;
+    import std.path : dirName, buildPath;
+
     recordings = [];
 
-    foreach (path; configFilePaths)
+    auto portableConfigPath = dirName(thisExePath()).buildPath("keynavrc");
+
+    foreach (path; [portableConfigPath] ~ configFilePaths)
     {
         loadConfig(path, true);
     }
