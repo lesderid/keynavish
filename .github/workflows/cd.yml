@@ -16,7 +16,7 @@ jobs:
       - name: Install dmd and dub
         uses: dlang-community/setup-dlang@v1
         with:
-          compiler: dmd-latest
+          compiler: dmd-2.100.2
       - name: Build keynavish (x86_64)
         run: dub build -b=release -a=x86_64
       - name: Create release
