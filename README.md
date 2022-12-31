@@ -38,7 +38,7 @@ On startup, keynavish loads a set of
 , and then tries
 to load the following configuration files:
 
-* `./keynavrc`
+* `<executable path>/keynavrc` (for portability)
 * `~/.keynavrc`
 * `~/keynavrc`
 * `~/.config/keynav/keynavrc`
