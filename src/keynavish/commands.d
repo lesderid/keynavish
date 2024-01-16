@@ -38,7 +38,9 @@ private void start()
     import core.sys.windows.windows : MoveWindow;
 
     resetGrid();
-    MoveWindow(windowHandle, 0, 0, grid.rect.width, grid.rect.height, false);
+
+    auto virtualScreen = virtualScreenRectangle;
+    MoveWindow(windowHandle, virtualScreen.left, virtualScreen.top, virtualScreen.width, virtualScreen.height, false);
 
     showWindow();
 }
@@ -108,24 +110,26 @@ private void cut(Direction direction, string arg)
     auto value = getCutMoveValue(direction, arg != null ? arg : "0.5");
     auto diff = (direction == Direction.up || direction == Direction.down) ? grid.rect.height - value : grid.rect.width - value;
 
+    auto virtualScreen = virtualScreenRectangle;
+
     Grid newGrid = grid;
     final switch (direction) with (Direction)
     {
         case up:
             newGrid.rect.bottom -= diff;
-            if (newGrid.rect.bottom < 0) newGrid.rect.bottom = 0;
+            if (newGrid.rect.bottom < virtualScreen.top) newGrid.rect.bottom = virtualScreen.top;
             break;
         case down:
             newGrid.rect.top += diff;
-            if (newGrid.rect.top < 0) newGrid.rect.top = 0;
+            if (newGrid.rect.top < virtualScreen.top) newGrid.rect.top = virtualScreen.top;
             break;
         case left:
             newGrid.rect.right -= diff;
-            if (newGrid.rect.right < 0) newGrid.rect.right = 0;
+            if (newGrid.rect.right < virtualScreen.left) newGrid.rect.right = virtualScreen.left;
             break;
         case right:
             newGrid.rect.left += diff;
-            if (newGrid.rect.left < 0) newGrid.rect.left = 0;
+            if (newGrid.rect.left < virtualScreen.left) newGrid.rect.left = virtualScreen.left;
             break;
     }
 
@@ -145,7 +149,9 @@ private void move(Direction direction, string arg)
 
     if (!active) return;
 
-    auto resolution = deviceResolution;
+    auto virtualScreen = virtualScreenRectangle;
+    auto virtualScreenRight = virtualScreen.left + virtualScreen.width;
+    auto virtualScreenBottom = virtualScreen.top + virtualScreen.height;
 
     auto value = getCutMoveValue(direction, arg != null ? arg : "1");
 
@@ -155,37 +161,37 @@ private void move(Direction direction, string arg)
         case up:
             newGrid.rect.top -= value;
             newGrid.rect.bottom -= value;
-            if (newGrid.rect.top < 0)
+            if (newGrid.rect.top < virtualScreen.top)
             {
-                newGrid.rect.bottom -= newGrid.rect.top;
-                newGrid.rect.top = 0;
+                newGrid.rect.bottom -= (newGrid.rect.top - virtualScreen.top);
+                newGrid.rect.top = virtualScreen.top;
             }
             break;
         case down:
             newGrid.rect.top += value;
             newGrid.rect.bottom += value;
-            if (newGrid.rect.bottom > resolution.height)
+            if (newGrid.rect.bottom > virtualScreenBottom)
             {
-                newGrid.rect.top -= (newGrid.rect.bottom - resolution.height);
-                newGrid.rect.bottom = resolution.height;
+                newGrid.rect.top -= (newGrid.rect.bottom - virtualScreenBottom);
+                newGrid.rect.bottom = virtualScreenBottom;
             }
             break;
         case left:
             newGrid.rect.left -= value;
             newGrid.rect.right -= value;
-            if (newGrid.rect.left < 0)
+            if (newGrid.rect.left < virtualScreen.left)
             {
-                newGrid.rect.right -= newGrid.rect.left;
-                newGrid.rect.left = 0;
+                newGrid.rect.right -= (newGrid.rect.left - virtualScreen.left);
+                newGrid.rect.left = virtualScreen.left;
             }
             break;
         case right:
             newGrid.rect.left += value;
             newGrid.rect.right += value;
-            if (newGrid.rect.right > resolution.width)
+            if (newGrid.rect.right > virtualScreenRight)
             {
-                newGrid.rect.left -= (newGrid.rect.right - resolution.width);
-                newGrid.rect.right = resolution.width;
+                newGrid.rect.left -= (newGrid.rect.right - virtualScreenRight);
+                newGrid.rect.right = virtualScreenRight;
             }
             break;
     }
@@ -202,7 +208,7 @@ private void warp()
 
     if (!active) return;
 
-    auto resolution = deviceResolution;
+    auto resolution = primaryDeviceResolution;
 
     auto middleX = grid.rect.left + grid.rect.width / 2;
     auto middleY = grid.rect.top + grid.rect.height / 2;

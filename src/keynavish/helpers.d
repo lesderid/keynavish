@@ -13,6 +13,12 @@ LONG height(RECT rect)
     return rect.bottom - rect.top;
 }
 
+bool contains(RECT rect, POINT point)
+{
+    return point.x >= rect.left && point.x < rect.right &&
+           point.y >= rect.top && point.y < rect.bottom;
+}
+
 string expandPath(string inputString)
 {
     import std.process : environment;

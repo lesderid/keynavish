@@ -19,7 +19,7 @@ HPEN mainPen;
 HPEN borderPen;
 
 @property
-Tuple!(int, "width", int, "height") deviceResolution()
+Tuple!(int, "width", int, "height") primaryDeviceResolution()
 {
     import core.sys.windows.windows : GetDC, GetDeviceCaps, HORZRES, VERTRES;
 
@@ -30,6 +30,41 @@ Tuple!(int, "width", int, "height") deviceResolution()
     resolution.height = GetDeviceCaps(rootDeviceContext, VERTRES);
 
     return resolution;
+}
+
+@property
+RECT[] displayRectangles()
+{
+    import core.sys.windows.windows : EnumDisplayMonitors, MONITORENUMPROC, BOOL, TRUE, HMONITOR, HDC, LPRECT, LPARAM;
+
+    RECT[] displayRectangles = [];
+
+    static extern(Windows) BOOL callback(HMONITOR, HDC, LPRECT rectangle, LPARAM userData)
+    {
+        RECT[]* displayRectangles = cast(RECT[]*) cast(void*) userData;
+
+        *displayRectangles ~= *rectangle;
+
+        return TRUE;
+    }
+
+    EnumDisplayMonitors(null, null, &callback, cast(LPARAM) cast(void*) &displayRectangles);
+
+    return displayRectangles;
+}
+
+@property
+Tuple!(int, "width", int, "height", int, "left", int, "top") virtualScreenRectangle()
+{
+    import core.sys.windows.windows : GetSystemMetrics, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN, SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN;
+
+    auto virtualScreen = typeof(return)();
+    virtualScreen.width = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+    virtualScreen.height = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+    virtualScreen.left = GetSystemMetrics(SM_XVIRTUALSCREEN);
+    virtualScreen.top = GetSystemMetrics(SM_YVIRTUALSCREEN);
+
+    return virtualScreen;
 }
 
 const(Grid) grid()
@@ -55,9 +90,18 @@ void tryPopGrid()
 
 void resetGrid()
 {
-    auto resolution = deviceResolution;
+    import core.sys.windows.windows : POINT, GetCursorPos;
+    import std.algorithm : find;
+    import std.range : empty;
 
-    grid_.rect = RECT(0, 0, resolution.width, resolution.height);
+    POINT cursorPosition;
+    auto result = GetCursorPos(&cursorPosition);
+    assert(result);
+
+    auto cursorScreen = displayRectangles.find!(r => r.contains(cursorPosition));
+    assert(!cursorScreen.empty);
+
+    grid_.rect = cursorScreen[0];
     grid_.rows = 2;
     grid_.columns = 2;
     gridStack = typeof(gridStack)();
@@ -84,13 +128,15 @@ void paintGrid(HDC deviceContext)
     import std.algorithm : map;
     import std.range : repeat, join, array;
 
+    auto virtualScreen = virtualScreenRectangle;
+
     auto pointArrays = splitGrid.map!(r => [
         POINT(r.left, r.top),
         POINT(r.right, r.top),
         POINT(r.right, r.bottom),
         POINT(r.left, r.bottom),
         POINT(r.left, r.top)
-    ]).join;
+    ].map!(p => POINT(p.x - virtualScreen.left, p.y - virtualScreen.top))).join;
 
     DWORD[] sizes = uint(5).repeat(pointArrays.length).array;
 

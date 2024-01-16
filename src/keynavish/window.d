@@ -24,7 +24,7 @@ void registerWindowClass()
 
 void createWindow()
 {
-    auto resolution = deviceResolution;
+    auto resolution = virtualScreenRectangle;
 
     windowHandle = CreateWindowEx(WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
                                   windowClassName.ptr,
