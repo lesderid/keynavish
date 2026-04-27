@@ -15,5 +15,12 @@ jobs:
           uses: dlang-community/setup-dlang@v1
           with:
             compiler: dmd-latest
-        - name: Build keynavish
-          run: dub build
+        - name: Build keynavish (x86_64)
+          run: dub build -a=x86_64
+        - name: Rename artifact
+          run: Rename-Item -Path out/keynavish.exe -NewName "keynavish-${{ github.sha }}-x86_64.exe"
+        - name: Upload keynavish (x86_64)
+          uses: actions/upload-artifact@v4
+          with:
+            name: keynavish-${{ github.sha }}-x86_64
+            path: out/keynavish-${{ github.sha }}-x86_64.exe
