@@ -29,13 +29,16 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 
 static this()
 {
-    import core.sys.windows.windows : CreatePen, GetDC, GetDeviceCaps, PS_SOLID, HORZRES, VERTRES;
+    import core.sys.windows.windows : CreateFont, CreatePen, FW_BOLD, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FIXED_PITCH, FF_MODERN, DEFAULT_CHARSET, PS_SOLID;
 
     registerWindowClass();
     registerKeyboardHook();
 
     mainPen = CreatePen(PS_SOLID, mainPenWidth, mainPenColour);
     borderPen = CreatePen(PS_SOLID, borderPenWidth * 2 + mainPenWidth, borderPenColour);
+    labelFont = CreateFont(18, 0, 0, 0, FW_BOLD, false, false, false, DEFAULT_CHARSET,
+                           OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
+                           FIXED_PITCH | FF_MODERN, "Courier New"w.ptr);
 }
 
 extern(C)

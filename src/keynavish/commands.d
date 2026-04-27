@@ -26,9 +26,11 @@ Direction commandToDirection(string commandString)
     }
 }
 
-private void redrawWindow()
+void redrawWindow()
 {
     import core.sys.windows.windows : InvalidateRect;
+
+    if (windowHandle == null) return;
 
     InvalidateRect(windowHandle, null, true);
 }
@@ -38,6 +40,10 @@ private void start()
     import core.sys.windows.windows : MoveWindow;
 
     resetGrid();
+    if (gridNavEnabled)
+    {
+        resetGridNavSelection();
+    }
 
     auto virtualScreen = virtualScreenRectangle;
     MoveWindow(windowHandle, virtualScreen.left, virtualScreen.top, virtualScreen.width, virtualScreen.height, false);
@@ -502,7 +508,30 @@ private void changeGrid(string columnsAndRows)
     redrawWindow();
 }
 
-private void cellSelect(string columnsAndRows)
+private void setGridNav(string value)
+{
+    import std.string : toLower;
+
+    switch (value.toLower)
+    {
+        case "on":
+            enableGridNav(true);
+            break;
+        case "off":
+            enableGridNav(false);
+            break;
+        case "toggle":
+            enableGridNav(!gridNavEnabled);
+            break;
+        default:
+            showError("Invalid grid-nav value: " ~ value);
+            return;
+    }
+
+    redrawWindow();
+}
+
+void cellSelect(string columnsAndRows)
 {
     import core.sys.windows.windows : RECT;
     import std.range : split, array;
@@ -626,6 +655,9 @@ void processCommand(string[] command)
             break;
         case "grid":
             changeGrid(command[1]);
+            break;
+        case "grid-nav":
+            setGridNav(command[1]);
             break;
         case "cell-select":
             cellSelect(command[1]);
