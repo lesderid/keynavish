@@ -329,9 +329,59 @@ extern(Windows)
 LRESULT lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
     import std.algorithm : find;
+    import std.ascii : toLower;
+    import std.conv : to;
     import std.range : empty;
 
     auto hookStruct = cast(PKBDLLHOOKSTRUCT) lParam;
+
+    bool handleGridNavKey(DWORD vkCode, BitFlags!ModifierKey modifiers)
+    {
+        import core.sys.windows.windows : VK_ESCAPE;
+
+        if (!gridNavEnabled)
+        {
+            return false;
+        }
+
+        if (vkCode == VK_ESCAPE)
+        {
+            enableGridNav(false);
+            redrawWindow();
+            return true;
+        }
+
+        if (modifiers || vkCode < 'A' || vkCode > 'Z')
+        {
+            return false;
+        }
+
+        auto value = toLower(cast(char) vkCode) - 'a';
+
+        if (gridNavState == GridNavState.row)
+        {
+            if (value >= grid.rows)
+            {
+                return false;
+            }
+
+            gridNavRow = value;
+            gridNavState = GridNavState.column;
+            redrawWindow();
+            return true;
+        }
+
+        if (value >= grid.columns)
+        {
+            return false;
+        }
+
+        gridNavColumn = value;
+        cellSelect((gridNavColumn + 1).to!string ~ "x" ~ (gridNavRow + 1).to!string);
+        resetGridNavSelection();
+        redrawWindow();
+        return true;
+    }
 
     if (nCode == HC_ACTION)
     {
@@ -362,26 +412,31 @@ LRESULT lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
                 }
                 else
                 {
-                    auto keyBindingRange = regularKeyBindings.find!(b => b.keyCombination == pressedCombination);
-                    if (!keyBindingRange.empty)
+                    if (waitingForRecordingKey)
                     {
-                        if (recordingActive)
-                        {
-                            recordCommands(keyBindingRange[0].commands);
-                        }
-                        processCommands(keyBindingRange[0].commands);
+                        setRecordingKey(hookStruct.vkCode);
+                    }
+                    else if (replaying)
+                    {
+                        replay(hookStruct.vkCode);
+                    }
+                    else if (handleGridNavKey(hookStruct.vkCode, modifiers))
+                    {
+                        return 1;
                     }
                     else
                     {
-                        if (waitingForRecordingKey)
+                        auto keyBindingRange = regularKeyBindings.find!(b => b.keyCombination == pressedCombination);
+                        if (!keyBindingRange.empty)
                         {
-                            setRecordingKey(hookStruct.vkCode);
-                        }
-                        else if (replaying)
-                        {
-                            replay(hookStruct.vkCode);
+                            if (recordingActive)
+                            {
+                                recordCommands(keyBindingRange[0].commands);
+                            }
+                            processCommands(keyBindingRange[0].commands);
                         }
                     }
+
                     return ((hookStruct.vkCode >= VK_LSHIFT && hookStruct.vkCode <= VK_RCONTROL) || hookStruct.vkCode == VK_LWIN || hookStruct.vkCode == VK_RWIN)
                         ? CallNextHookEx(null, nCode, wParam, lParam)
                         : 1;
