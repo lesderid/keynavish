@@ -956,6 +956,7 @@ Accessibility permission, so they run unattended and in CI.
 | Suite | Checks | Covers |
 |---|---:|---|
 | `config_test.d` | 31 | Stock keybindings all register, the repository `keynavrc` parses completely (61 binding lines), command verification, `record`/`playback` still load on macOS, path expansion |
+| `grid_test.d` | 24 | `cut`/`move`/`cell-select` arithmetic, the grid stack, grid dimensions, grid-nav labels, inertness while inactive. Pure integer maths shared verbatim with the Windows build, so a regression would silently change what the same `keynavrc` does. The `move` cases need real display bounds and skip cleanly without them |
 | `keys_test.d` | 47 | Key-name resolution against the live layout, keycode round-tripping for grid-nav, distinctness, rejection of unknown names, modifier predicates |
 | `render_test.d` | 14 | Renders the grid into an offscreen bitmap: geometry from `splitGrid`, global-to-window translation, exact colour match with the Windows constants, grid-nav label placement and selection highlight |
 
