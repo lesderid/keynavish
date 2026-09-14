@@ -40,6 +40,8 @@ jobs:
           uses: dlang-community/setup-dlang@v1
           with:
             compiler: ldc-latest
+        # Also type-checks the Windows build, which catches Windows-side
+        # breakage without needing a Windows runner.
         - name: Run tests
           run: ./tools/run-tests.sh
         - name: Build keynavish.app

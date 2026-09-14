@@ -4,8 +4,9 @@ Plan for bringing keynavish (currently Windows-only, ~2200 lines of D) to macOS,
 keeping keynav configuration-file compatibility.
 
 Status: **phases 0-6 implemented on macOS** (see §10). The Windows build is
-refactored but unverified -- no Windows machine was available. §14 records where
-implementation diverged from this plan.
+refactored and type-checks for both its target architectures, but has not been
+run -- no Windows machine was available. §14 records where implementation
+diverged from this plan.
 
 ---
 
@@ -948,10 +949,15 @@ have shipped as a subtle visual difference nobody could easily name.
 
 ### 14.6 Not verified
 
-* **The Windows build.** Refactored but never compiled or run — no Windows
-  machine was available. Windows code was moved with behaviour preserved
-  verbatim and the risky parts left alone, but it needs a real build before
-  anyone relies on it. This is the single largest gap.
+* **The Windows build has not been run.** It does type-check: `tools/check-windows.sh`
+  runs LDC's full semantic analysis against `x86_64-pc-windows-msvc` and
+  `i686-pc-windows-msvc` from any platform, without linking or a Windows SDK,
+  and both pass. That rules out the whole class of refactoring damage — renamed
+  or missing symbols, bad signatures, type errors — in code that would otherwise
+  have been completely unchecked while developing on macOS. It is wired into CI.
+  What it cannot catch: link-time problems (a missing Win32 import-library
+  symbol) and, obviously, anything about actual runtime behaviour. A real build
+  and a few minutes of manual use remain the outstanding gap.
 * **The event tap and everything downstream of it** — key handling, mouse
   synthesis, `windowzoom`. All need Accessibility permission, which has to be
   granted interactively. The app correctly detects its absence and enters the

@@ -58,6 +58,12 @@ for test in $TESTS; do
 	fi
 done
 
+# Cheap, and catches Windows breakage from a macOS-only change.
+printf '\n=== windows type check ===\n'
+if ! "$SCRIPT_DIR/check-windows.sh"; then
+	STATUS=1
+fi
+
 printf '\n'
 if [ "$STATUS" -eq 0 ]; then
 	echo "all test suites passed"
