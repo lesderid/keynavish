@@ -369,8 +369,8 @@ free from the OS.** Two-tier resolution:
   `comma`, `minus`, `period`, …) — build a character-to-keycode map at startup by
   running keycodes `0…127` through `UCKeyTranslate`, with the layout from
   `TISCopyCurrentKeyboardLayoutInputSource` / `kTISPropertyUnicodeKeyLayoutData`,
-  both unshifted and shifted. Rebuild on
-  `kTISNotifySelectedKeyboardInputSourceChanged`.
+  both unshifted and shifted. Rebuild when the layout changes (implemented via
+  AppKit's `NSTextInputContextKeyboardSelectionDidChangeNotification`).
 * **Non-character keys** — fixed `kVK_*` table: `Escape`, `Tab`, `Return`, `space`,
   arrows, `Home`, `End`, `Prior`/`Page_Up`, `Next`/`Page_Down`, `Delete`,
   `KP_0`–`KP_9`, `Super_L`/`Super_R` (to `kVK_Command`/`kVK_RightCommand`).
@@ -380,6 +380,12 @@ This is essentially what **XQuartz** does to build an X keymap from the current 
 layout, so its keycode-to-keysym translation is a directly applicable reference
 implementation if the `UCKeyTranslate` details get hairy (dead keys, non-ASCII
 layouts).
+
+**Rebuilding the map is not sufficient on its own.** Bindings store *resolved*
+keycodes, so after a layout switch they would still point at the previous
+layout's physical keys -- exactly what this whole mechanism exists to prevent.
+The layout-change handler therefore re-runs the default bindings and reloads the
+config files, so every binding is resolved afresh.
 
 Side benefit: the `at` hack in `parseKeyCombination` (mapping `@` to VK `'2'`
 because Windows has no `@` virtual-key code) is not needed on macOS — `@` resolves
@@ -928,6 +934,15 @@ Only one, and it is a robustness fix rather than a feature change:
   preserved verbatim. The fix is `MOUSEEVENTF_VIRTUALDESK` plus normalising
   against `virtualScreenRectangle`, but it is a behaviour change to a platform
   that could not be tested here, so it is left for a separate change.
+* **`x-set-delay` blocks the event tap.** `click` and `doubleclick` sleep
+  between the down and up events, and that sleep happens inside the tap
+  callback, blocking the run loop. A long enough delay trips the tap timeout.
+  The consequence is contained rather than fatal, because the callback handles
+  `kCGEventTapDisabledByTimeout` and re-enables itself, but a click may be lost.
+  The Windows hook has the same shape of problem (`LowLevelHooksTimeout`), so
+  this is inherited rather than introduced. The macOS-native fix would be to
+  post the second event from a `dispatch_after` block instead of sleeping, which
+  is a behaviour change worth making deliberately rather than in passing.
 * **A comma inside a quoted argument still splits the command.**
   `sh "echo hello, world"` parses as two commands. The outer comma split only
   honours quotes at the start of a field. Shared with the Windows build; pinned

@@ -133,7 +133,22 @@ bool installKeyboardHook()
 
     buildLayoutMap();
 
+    knv_set_layout_changed_callback(&layoutChangedCallback);
+
     return true;
+}
+
+private extern (C) void layoutChangedCallback() nothrow
+{
+    try
+    {
+        debugLog("keyboard layout changed; re-resolving key bindings");
+
+        rebuildForLayoutChange();
+    }
+    catch (Throwable)
+    {
+    }
 }
 
 private extern (C) void permissionPollCallback() nothrow

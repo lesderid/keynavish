@@ -30,9 +30,14 @@ typedef void (*knv_paint_callback)(int displayIndex, CGContextRef context,
 // Display arrangement changed; D should rebuild its overlay windows.
 typedef void (*knv_screens_changed_callback)(void);
 
+// The selected keyboard layout changed; D must rebuild its key map, since key
+// names are resolved against the active layout.
+typedef void (*knv_layout_changed_callback)(void);
+
 static knv_menu_callback            g_menu_callback;
 static knv_paint_callback           g_paint_callback;
 static knv_screens_changed_callback g_screens_changed_callback;
+static knv_layout_changed_callback  g_layout_changed_callback;
 
 // ---------------------------------------------------------------------------
 // Application
@@ -46,6 +51,12 @@ static knv_screens_changed_callback g_screens_changed_callback;
 {
     (void)note;
     if (g_screens_changed_callback) g_screens_changed_callback();
+}
+
+- (void)layoutChanged:(NSNotification *)note
+{
+    (void)note;
+    if (g_layout_changed_callback) g_layout_changed_callback();
 }
 @end
 
@@ -67,6 +78,14 @@ void knv_app_init(void)
                selector:@selector(screensChanged:)
                    name:NSApplicationDidChangeScreenParametersNotification
                  object:nil];
+
+        // Key names resolve against the active layout, so switching layout has
+        // to invalidate the map. See MACOS-PORT.md §6.3.
+        [[NSNotificationCenter defaultCenter]
+            addObserver:g_app_delegate
+               selector:@selector(layoutChanged:)
+                   name:NSTextInputContextKeyboardSelectionDidChangeNotification
+                 object:nil];
     }
 }
 
@@ -85,6 +104,11 @@ void knv_terminate(void)
 void knv_set_screens_changed_callback(knv_screens_changed_callback cb)
 {
     g_screens_changed_callback = cb;
+}
+
+void knv_set_layout_changed_callback(knv_layout_changed_callback cb)
+{
+    g_layout_changed_callback = cb;
 }
 
 // ---------------------------------------------------------------------------

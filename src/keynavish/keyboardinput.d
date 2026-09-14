@@ -7,6 +7,18 @@ import keynavish.platform;
 
 static this()
 {
+    registerDefaultKeyBindings();
+}
+
+//
+// The keynav default bindings, applied before any config file is read.
+//
+// Callable rather than inlined into the module constructor because the macOS
+// build re-runs it when the keyboard layout changes: bindings store resolved
+// keycodes, so they have to be resolved again against the new layout (§6.3).
+//
+void registerDefaultKeyBindings()
+{
     registerKeyBinding("clear");
     registerKeyBinding("ctrl+semicolon start");
     registerKeyBinding("Escape end");

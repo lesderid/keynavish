@@ -19,12 +19,14 @@ alias MenuCallback = extern (C) void function(int tag);
 alias PaintCallback = extern (C) void function(int displayIndex, void* context,
                                                double width, double height);
 alias ScreensChangedCallback = extern (C) void function();
+alias LayoutChangedCallback = extern (C) void function();
 
 // Application lifecycle
 void knv_app_init();
 void knv_run();
 void knv_terminate();
 void knv_set_screens_changed_callback(ScreensChangedCallback cb);
+void knv_set_layout_changed_callback(LayoutChangedCallback cb);
 
 // Displays (NSScreen; CGGetActiveDisplayList is unreliable, see shim.m)
 int knv_display_count();

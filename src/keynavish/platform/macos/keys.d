@@ -91,20 +91,10 @@ private KeyCode[dchar] charToKeyCode;
 private dchar[KeyCode] keyCodeToChar;
 private bool layoutMapBuilt;
 
-/// Translates one keycode through the active layout. `shifted` picks the
-/// shifted character (e.g. '@' rather than '2' on a US layout).
-private dchar translateKeyCode(KeyCode keyCode, bool shifted)
+/// Translates one keycode through a layout. `shifted` picks the shifted
+/// character (e.g. '@' rather than '2' on a US layout).
+private dchar translateKeyCode(const(ubyte)* layout, KeyCode keyCode, bool shifted)
 {
-    auto source = TISCopyCurrentKeyboardLayoutInputSource();
-    if (source is null) return dchar.init;
-    scope (exit) CFRelease(source);
-
-    auto layoutData = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData);
-    if (layoutData is null) return dchar.init;
-
-    auto layout = CFDataGetBytePtr(layoutData);
-    if (layout is null) return dchar.init;
-
     // UCKeyTranslate takes the Carbon modifier field shifted right by 8;
     // shiftKey is 1 << 9, so the shift state is 1 << 1.
     uint modifierState = shifted ? 2 : 0;
@@ -135,12 +125,25 @@ void buildLayoutMap()
 {
     charToKeyCode = null;
     keyCodeToChar = null;
+    layoutMapBuilt = true;
+
+    // Fetched once rather than per keycode: this runs 256 translations, and
+    // copying the input source each time made startup needlessly slow.
+    auto source = TISCopyCurrentKeyboardLayoutInputSource();
+    if (source is null) return;
+    scope (exit) CFRelease(source);
+
+    auto layoutData = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData);
+    if (layoutData is null) return;
+
+    auto layout = CFDataGetBytePtr(layoutData);
+    if (layout is null) return;
 
     // 0x00..0x7F covers every key the layout can produce a character for.
     foreach (KeyCode keyCode; 0 .. 0x80)
     {
-        auto unshifted = translateKeyCode(keyCode, false);
-        auto shifted = translateKeyCode(keyCode, true);
+        auto unshifted = translateKeyCode(layout, keyCode, false);
+        auto shifted = translateKeyCode(layout, keyCode, true);
 
         if (unshifted != dchar.init)
         {
@@ -154,8 +157,21 @@ void buildLayoutMap()
             charToKeyCode[shifted] = keyCode;
         }
     }
+}
 
-    layoutMapBuilt = true;
+/// Handles a keyboard layout change: rebuild the character map, then re-resolve
+/// every binding against it.
+///
+/// Rebuilding the map alone would not be enough -- bindings store resolved
+/// keycodes, so they would keep pointing at the previous layout's physical
+/// keys, which is exactly what layout-aware resolution exists to avoid (§6.3).
+void rebuildForLayoutChange()
+{
+    import keynavish.commands : reloadAllKeyBindings;
+
+    buildLayoutMap();
+
+    reloadAllKeyBindings();
 }
 
 /// The character the given keycode produces unshifted on the active layout, or

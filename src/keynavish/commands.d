@@ -335,6 +335,20 @@ void loadAllConfigs()
     loadRecordings();
 }
 
+/// Drops every binding and rebuilds it from the defaults plus the config files.
+///
+/// Used on macOS when the keyboard layout changes: key names resolve to
+/// keycodes at registration time, so the existing bindings would otherwise keep
+/// pointing at the previous layout's physical keys (§6.3).
+void reloadAllKeyBindings()
+{
+    clear();
+
+    registerDefaultKeyBindings();
+
+    loadAllConfigs();
+}
+
 /// Config shipped alongside the program, loaded before the user's ~ files.
 private string[] portableConfigPaths()
 {
