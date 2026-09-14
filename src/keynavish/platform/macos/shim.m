@@ -433,6 +433,30 @@ static void knv_alert(const char *message, NSAlertStyle style)
     });
 }
 
+// Synchronous three-button prompt, returning 0/1/2 for the buttons in order.
+//
+// Unlike the alerts above this one blocks, which is safe ONLY because it is
+// reached from a menu action on the main thread. It must never be called from
+// the event tap callback -- see MACOS-PORT.md 6.12.
+int knv_alert_choice(const char *message, const char *button0,
+                     const char *button1, const char *button2)
+{
+    @autoreleasepool {
+        NSAlert *alert = [[NSAlert alloc] init];
+        alert.messageText = @"keynavish";
+        alert.informativeText = [NSString stringWithUTF8String:message];
+        alert.alertStyle = NSAlertStyleInformational;
+
+        [alert addButtonWithTitle:[NSString stringWithUTF8String:button0]];
+        [alert addButtonWithTitle:[NSString stringWithUTF8String:button1]];
+        [alert addButtonWithTitle:[NSString stringWithUTF8String:button2]];
+
+        [NSApp activateIgnoringOtherApps:YES];
+
+        return (int)([alert runModal] - NSAlertFirstButtonReturn);
+    }
+}
+
 void knv_alert_error(const char *message)   { knv_alert(message, NSAlertStyleCritical); }
 void knv_alert_warning(const char *message) { knv_alert(message, NSAlertStyleWarning); }
 void knv_alert_info(const char *message)    { knv_alert(message, NSAlertStyleInformational); }

@@ -152,8 +152,25 @@ void editConfigFile()
     {
         path = configFilePaths[0].expandPath;
 
-        write(path, import("keynavrc"));
-        showInfo(format!"No config file found, one has been created at %s."(path));
+        // Same three-way choice as the Windows build, so the two behave alike.
+        // Safe to block here: this runs from a menu action, not the event tap.
+        auto choice = knv_alert_choice(
+            format!"No config file found, one will be created at %s. Would you like to use an example config?"(path).toStringz,
+            "Yes".toStringz, "No".toStringz, "Cancel".toStringz);
+
+        switch (choice)
+        {
+            case 0:
+                write(path, import("keynavrc"));
+                break;
+            case 1:
+                write(path, []);
+                break;
+            default:
+                // Cancel, or the dialog dismissed some other way: do nothing,
+                // which is the safe reading of an ambiguous answer.
+                return;
+        }
     }
     else
     {

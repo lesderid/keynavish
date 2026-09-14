@@ -54,6 +54,11 @@ void knv_alert_error(const(char)* message);
 void knv_alert_warning(const(char)* message);
 void knv_alert_info(const(char)* message);
 
+/// Synchronous three-button prompt; returns the zero-based button index.
+/// Main thread only -- never from the event tap callback.
+int knv_alert_choice(const(char)* message, const(char)* button0,
+                     const(char)* button1, const(char)* button2);
+
 // Opening files and URLs
 void knv_open_url(const(char)* url);
 void knv_open_file(const(char)* path);
