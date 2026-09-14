@@ -1,10 +1,10 @@
 module keynavish.commands;
 
+import std.typecons : BitFlags;
 import keynavish;
+import keynavish.types;
+import keynavish.platform;
 
-import core.sys.windows.windows : LONG, DWORD;
-
-DWORD draggingFlag;
 long delayMilliseconds = 0;
 
 enum Direction
@@ -26,27 +26,18 @@ Direction commandToDirection(string commandString)
     }
 }
 
-void redrawWindow()
-{
-    import core.sys.windows.windows : InvalidateRect;
-
-    if (windowHandle == null) return;
-
-    InvalidateRect(windowHandle, null, true);
-}
-
 private void start()
 {
-    import core.sys.windows.windows : MoveWindow;
-
     resetGrid();
     if (gridNavEnabled)
     {
         resetGridNavSelection();
     }
 
-    auto virtualScreen = virtualScreenRectangle;
-    MoveWindow(windowHandle, virtualScreen.left, virtualScreen.top, virtualScreen.width, virtualScreen.height, false);
+    version (Windows)
+    {
+        moveOverlayToVirtualScreen();
+    }
 
     showWindow();
 }
@@ -64,24 +55,41 @@ private void toggleStart()
 
 private void quit()
 {
-    import core.sys.windows.windows : PostQuitMessage;
-
-    PostQuitMessage(0);
+    quitApplication();
 }
 
 void restart()
 {
-    import core.sys.windows.windows : GetModuleFileName;
     import std.process : spawnProcess;
-    import std.conv : to;
     import core.runtime : Runtime;
 
-    spawnProcess(Runtime.args);
+    version (Windows)
+    {
+        spawnProcess(Runtime.args);
+    }
+    else
+    {
+        import core.stdc.string : strlen;
+        import keynavish.platform.macos.shim : knv_bundle_path;
+
+        // Re-exec the bundle rather than the inner binary, so the relaunched
+        // process keeps its bundle identity -- and with it the Accessibility
+        // grant, which is keyed on bundle id plus signature (§7.2).
+        auto bundle = knv_bundle_path();
+        if (bundle !is null)
+        {
+            spawnProcess(["open", "-n", bundle[0 .. strlen(bundle)].idup]);
+        }
+        else
+        {
+            spawnProcess(Runtime.args);
+        }
+    }
 
     quit();
 }
 
-private LONG getCutMoveValue(Direction direction, string arg)
+private int getCutMoveValue(Direction direction, string arg)
 {
     import std.algorithm : canFind;
     import std.conv : to;
@@ -99,18 +107,16 @@ private LONG getCutMoveValue(Direction direction, string arg)
     }
     else if (arg.canFind('.'))
     {
-        return cast(LONG)(arg.to!double * original);
+        return cast(int)(arg.to!double * original);
     }
     else
     {
-        return arg.to!LONG;
+        return arg.to!int;
     }
 }
 
 private void cut(Direction direction, string arg)
 {
-    import core.sys.windows.windows : RECT;
-
     if (!active) return;
 
     auto value = getCutMoveValue(direction, arg != null ? arg : "0.5");
@@ -151,13 +157,11 @@ private void cut(Direction direction, string arg)
 
 private void move(Direction direction, string arg)
 {
-    import core.sys.windows.windows : RECT;
-
     if (!active) return;
 
     auto virtualScreen = virtualScreenRectangle;
-    auto virtualScreenRight = virtualScreen.left + virtualScreen.width;
-    auto virtualScreenBottom = virtualScreen.top + virtualScreen.height;
+    auto virtualScreenRight = virtualScreen.right;
+    auto virtualScreenBottom = virtualScreen.bottom;
 
     auto value = getCutMoveValue(direction, arg != null ? arg : "1");
 
@@ -209,38 +213,21 @@ private void move(Direction direction, string arg)
 
 private void warp()
 {
-    import core.sys.windows.windows : SetCursorPos;
-    import core.sys.windows.winuser;
-
     if (!active) return;
 
-    auto resolution = primaryDeviceResolution;
-
-    auto middleX = grid.rect.left + grid.rect.width / 2;
-    auto middleY = grid.rect.top + grid.rect.height / 2;
-
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dx = middleX * 65536 / resolution.width;
-    input.mi.dy = middleY * 65536 / resolution.height;
-    input.mi.dwFlags = MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | draggingFlag;
-    SendInput(1, &input, INPUT.sizeof);
+    warpCursor(Point(grid.rect.left + grid.rect.width / 2,
+                     grid.rect.top + grid.rect.height / 2));
 }
 
 private void cursorZoom(int width, int height)
 {
-    import core.sys.windows.windows : RECT, POINT, GetCursorPos;
-
-    POINT cursorPosition;
-
-    auto result = GetCursorPos(&cursorPosition);
-    assert(result);
+    auto cursor = cursorPosition;
 
     Grid newGrid = grid;
-    newGrid.rect.left = cursorPosition.x - width / 2;
-    newGrid.rect.right = cursorPosition.x + width / 2;
-    newGrid.rect.top = cursorPosition.y - height / 2;
-    newGrid.rect.bottom = cursorPosition.y + height / 2;
+    newGrid.rect.left = cursor.x - width / 2;
+    newGrid.rect.right = cursor.x + width / 2;
+    newGrid.rect.top = cursor.y - height / 2;
+    newGrid.rect.bottom = cursor.y + height / 2;
     grid = newGrid;
 
     redrawWindow();
@@ -248,10 +235,12 @@ private void cursorZoom(int width, int height)
 
 private void windowZoom()
 {
-    import core.sys.windows.windows : RECT, GetForegroundWindow, GetWindowRect;
+    auto rect = focusedWindowRect();
+
+    if (rect.isNull) return;
 
     Grid newGrid = grid;
-    GetWindowRect(GetForegroundWindow(), &newGrid.rect);
+    newGrid.rect = rect.get();
     grid = newGrid;
 
     redrawWindow();
@@ -259,174 +248,72 @@ private void windowZoom()
 
 private void click(string button)
 {
-    import core.sys.windows.winuser;
-    import core.thread.osthread : Thread;
-    import core.time : dur;
+    import std.conv : to;
 
-    INPUT[2] inputs;
-
-    inputs[0].type = INPUT_MOUSE;
-    inputs[1].type = INPUT_MOUSE;
-
-    switch (button)
+    auto buttonNumber = button.toButtonNumber;
+    if (buttonNumber == 0)
     {
-        case "1":
-            inputs[0].mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
-            inputs[1].mi.dwFlags = MOUSEEVENTF_LEFTUP;
-            break;
-        case "2":
-            inputs[0].mi.dwFlags = MOUSEEVENTF_MIDDLEDOWN;
-            inputs[1].mi.dwFlags = MOUSEEVENTF_MIDDLEUP;
-            break;
-        case "3":
-            inputs[0].mi.dwFlags = MOUSEEVENTF_RIGHTDOWN;
-            inputs[1].mi.dwFlags = MOUSEEVENTF_RIGHTUP;
-            break;
-        case "4":
-            inputs[0].mi.dwFlags = MOUSEEVENTF_WHEEL;
-            inputs[0].mi.mouseData = WHEEL_DELTA;
-            inputs[1].mi.dwFlags = 0;
-            break;
-        case "5":
-            inputs[0].mi.dwFlags = MOUSEEVENTF_WHEEL;
-            inputs[0].mi.mouseData = -WHEEL_DELTA;
-            inputs[1].mi.dwFlags = 0;
-            break;
-        default:
-            showError("Invalid mouse button: " ~ button);
-            break;
+        showError("Invalid mouse button: " ~ button);
+        return;
     }
 
-    if (delayMilliseconds == 0)
-    {
-        SendInput(2, inputs.ptr, INPUT.sizeof);
-    }
-    else
-    {
-        SendInput(1, inputs.ptr, INPUT.sizeof);
-        Thread.sleep(dur!("msecs")(delayMilliseconds));
-        SendInput(1, inputs.ptr + 1, INPUT.sizeof);
-    }
+    mouseClick(buttonNumber, delayMilliseconds);
 }
 
 private void doubleClick(string button)
 {
-    import core.sys.windows.winuser;
-    import core.thread.osthread : Thread;
-    import core.time : dur;
-
-    INPUT[4] inputs;
-
-    inputs[0].type = INPUT_MOUSE;
-    inputs[1].type = INPUT_MOUSE;
-
-    switch (button)
+    auto buttonNumber = button.toButtonNumber;
+    if (buttonNumber == 0 || buttonNumber > 3)
     {
-        case "1":
-            inputs[0].mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
-            inputs[1].mi.dwFlags = MOUSEEVENTF_LEFTUP;
-            break;
-        case "2":
-            inputs[0].mi.dwFlags = MOUSEEVENTF_MIDDLEDOWN;
-            inputs[1].mi.dwFlags = MOUSEEVENTF_MIDDLEUP;
-            break;
-        case "3":
-            inputs[0].mi.dwFlags = MOUSEEVENTF_RIGHTDOWN;
-            inputs[1].mi.dwFlags = MOUSEEVENTF_RIGHTUP;
-            break;
-        default:
-            showError("Invalid mouse button: " ~ button);
-            break;
+        showError("Invalid mouse button: " ~ button);
+        return;
     }
 
-    inputs[2] = inputs[0];
-    inputs[3] = inputs[1];
-
-    if (delayMilliseconds == 0)
-    {
-        SendInput(4, inputs.ptr, INPUT.sizeof);
-    }
-    else
-    {
-        SendInput(1, inputs.ptr, INPUT.sizeof);
-        Thread.sleep(dur!("msecs")(delayMilliseconds));
-        SendInput(1, inputs.ptr + 1, INPUT.sizeof);
-
-        SendInput(1, inputs.ptr + 2, INPUT.sizeof);
-        Thread.sleep(dur!("msecs")(delayMilliseconds));
-        SendInput(1, inputs.ptr + 3, INPUT.sizeof);
-    }
+    mouseDoubleClick(buttonNumber, delayMilliseconds);
 }
 
 private void drag(string button, string modifiers)
 {
-    import core.sys.windows.windows;
     import std.string : split;
 
-    static bool dragging = false;
-
-    INPUT mouseInput;
-
-    mouseInput.type = INPUT_MOUSE;
-
-    switch (button)
+    auto buttonNumber = button.toButtonNumber;
+    if (buttonNumber == 0 || buttonNumber > 3)
     {
-        case "1":
-            mouseInput.mi.dwFlags = !draggingFlag ? MOUSEEVENTF_LEFTDOWN : MOUSEEVENTF_LEFTUP;
-            break;
-        case "2":
-            mouseInput.mi.dwFlags = !draggingFlag ? MOUSEEVENTF_MIDDLEDOWN : MOUSEEVENTF_MIDDLEUP;
-            break;
-        case "3":
-            mouseInput.mi.dwFlags = !draggingFlag ? MOUSEEVENTF_RIGHTDOWN : MOUSEEVENTF_RIGHTUP;
-            break;
-        default:
-            showError("Invalid mouse button: " ~ button);
-            break;
+        showError("Invalid mouse button: " ~ button);
+        return;
     }
 
-    if (draggingFlag && modifiers != null)
-    {
-        INPUT[] keyUpInputs;
-        INPUT[] keyDownInputs;
+    BitFlags!ModifierKey modifierFlags = ModifierKey.none;
 
+    if (modifiers != null)
+    {
         foreach (modifier; modifiers.split('+'))
         {
-            INPUT keyboardInput;
-            keyboardInput.type = INPUT_KEYBOARD;
             switch (modifier)
             {
-                case "ctrl":
-                    keyboardInput.ki.wVk = VK_CONTROL;
-                    break;
-                case "shift":
-                    keyboardInput.ki.wVk = VK_SHIFT;
-                    break;
-                case "alt":
-                    keyboardInput.ki.wVk = VK_MENU;
-                    break;
-                case "super":
-                    keyboardInput.ki.wVk = VK_LWIN;
-                    break;
-                default:
-                    break;
+                case "ctrl":  modifierFlags |= ModifierKey.ctrl; break;
+                case "shift": modifierFlags |= ModifierKey.shift; break;
+                case "alt":   modifierFlags |= ModifierKey.alt; break;
+                case "super": modifierFlags |= ModifierKey.super_; break;
+                default: break;
             }
-
-            keyUpInputs ~= keyboardInput;
-
-            keyboardInput.ki.dwFlags = KEYEVENTF_KEYUP;
-            keyDownInputs ~= keyboardInput;
         }
-
-        INPUT[] inputs = keyUpInputs ~ [mouseInput] ~ keyDownInputs;
-        SendInput(cast(DWORD) inputs.length, inputs.ptr, INPUT.sizeof);
     }
-    else
+
+    mouseDragToggle(buttonNumber, modifierFlags);
+}
+
+private int toButtonNumber(string button)
+{
+    switch (button)
     {
-        SendInput(1, &mouseInput, INPUT.sizeof);
+        case "1": return 1;
+        case "2": return 2;
+        case "3": return 3;
+        case "4": return 4;
+        case "5": return 5;
+        default:  return 0;
     }
-
-    draggingFlag = !draggingFlag ? mouseInput.mi.dwFlags : 0;
 }
 
 private void runShellCommand(string shellCommand)
@@ -438,14 +325,9 @@ private void runShellCommand(string shellCommand)
 
 void loadAllConfigs()
 {
-    import std.file : thisExePath;
-    import std.path : dirName, buildPath;
-
     recordings = [];
 
-    auto portableConfigPath = dirName(thisExePath()).buildPath("keynavrc");
-
-    foreach (path; [portableConfigPath] ~ configFilePaths)
+    foreach (path; portableConfigPaths ~ configFilePaths)
     {
         loadConfig(path, true);
     }
@@ -453,10 +335,35 @@ void loadAllConfigs()
     loadRecordings();
 }
 
+/// Config shipped alongside the program, loaded before the user's ~ files.
+private string[] portableConfigPaths()
+{
+    version (Windows)
+    {
+        import std.file : thisExePath;
+        import std.path : dirName, buildPath;
+
+        return [dirName(thisExePath()).buildPath("keynavrc")];
+    }
+    else
+    {
+        // Inside the bundle, next to the executable is Contents/MacOS, which is
+        // not a place a user would ever look; the shipped default lives in
+        // Contents/Resources instead. See MACOS-PORT.md §6.11.
+        import core.stdc.string : strlen;
+        import std.path : buildPath;
+        import keynavish.platform.macos.shim : knv_resource_path;
+
+        auto resources = knv_resource_path();
+        if (resources is null) return [];
+
+        return [resources[0 .. strlen(resources)].idup.buildPath("keynavrc")];
+    }
+}
+
 void loadConfig(string pathString, bool silent = false)
 {
     import std.file : exists, readText;
-    import std.range : array;
     import std.conv : to;
     import std.format : format;
     import std.array : replace, split;
@@ -533,7 +440,6 @@ private void setGridNav(string value)
 
 void cellSelect(string columnsAndRows)
 {
-    import core.sys.windows.windows : RECT;
     import std.range : split, array;
     import std.algorithm : map;
     import std.conv : to;
@@ -546,7 +452,7 @@ void cellSelect(string columnsAndRows)
     auto height = grid.rect.height / grid.rows;
 
     Grid newGrid = grid;
-    newGrid.rect = RECT(x + (dimArray[0] - 1) * width, y + (dimArray[1] - 1) * height, x + dimArray[0] * width, y + dimArray[1] * height);
+    newGrid.rect = Rect(x + (dimArray[0] - 1) * width, y + (dimArray[1] - 1) * height, x + dimArray[0] * width, y + dimArray[1] * height);
     if (newGrid.rect.height < 2 || newGrid.rect.width < 2)
     {
         resetGrid();
@@ -561,19 +467,36 @@ void cellSelect(string columnsAndRows)
 
 private void record(string path = null)
 {
-    if (recordingActive)
+    version (Windows)
     {
-        stopRecording();
+        if (recordingActive)
+        {
+            stopRecording();
+        }
+        else
+        {
+            startRecording(path);
+        }
     }
     else
     {
-        startRecording(path);
+        // Recordings are deferred on macOS (MACOS-PORT.md §6.3). This must stay
+        // silent rather than erroring: `q record ~/.keynav_macros` is in the
+        // stock keybindings, so a shared keynavrc would otherwise raise a dialog
+        // on an ordinary keystroke.
     }
 }
 
 private void replay()
 {
-    startReplaying();
+    version (Windows)
+    {
+        startReplaying();
+    }
+    else
+    {
+        // See record(), above.
+    }
 }
 
 private void clear()
@@ -717,7 +640,7 @@ bool verifyCommand(string[] command)
         {
             return true;
         }
-        
+
         if (minCount == maxCount)
         {
             showError(format!"Command '%s' needs %d %s but %d %s given: %s"(command[0],

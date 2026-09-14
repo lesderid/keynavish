@@ -1,49 +1,67 @@
 module keynavish.main;
 
-import core.sys.windows.windows;
 static import std.getopt;
 import keynavish;
+import keynavish.platform;
 
-alias extern(C) int function(string[] args) MainFunc;
-extern (C) int _d_run_main(int argc, char **argv, MainFunc mainFunc);
-
-int WinMain_(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+version (Windows)
 {
-    import std.algorithm : map;
-    import std.conv : to;
-    import std.array : array;
-    import std.string : fromStringz;
+    import core.sys.windows.windows;
 
-    int argCount;
-    wchar** wideArgs = CommandLineToArgvW(GetCommandLine(), &argCount);
-    char** args = wideArgs[0 .. argCount].map!(cs => cs.fromStringz.to!(char[]).ptr).array.ptr;
+    alias extern(C) int function(string[] args) MainFunc;
+    extern (C) int _d_run_main(int argc, char **argv, MainFunc mainFunc);
 
-    return _d_run_main(argCount, args, &_main);
+    int WinMain_(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+    {
+        import std.algorithm : map;
+        import std.conv : to;
+        import std.array : array;
+        import std.string : fromStringz;
+
+        int argCount;
+        wchar** wideArgs = CommandLineToArgvW(GetCommandLine(), &argCount);
+        char** args = wideArgs[0 .. argCount].map!(cs => cs.fromStringz.to!(char[]).ptr).array.ptr;
+
+        return _d_run_main(argCount, args, &_main);
+    }
+
+    extern(Windows)
+    int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+    {
+        return exceptionHandlerWrapper!WinMain_(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
+    }
+
+    static this()
+    {
+        registerWindowClass();
+        createGdiObjects();
+    }
+
+    extern(C)
+    int _main(string[] args)
+    {
+        return runKeynavish(args);
+    }
+}
+else
+{
+    int main(string[] args)
+    {
+        return runKeynavish(args);
+    }
 }
 
-extern(Windows)
-int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+int runKeynavish(string[] args)
 {
-    return exceptionHandlerWrapper!WinMain_(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
-}
+    version (OSX)
+    {
+        import keynavish.platform.macos.shim : knv_app_init;
 
-static this()
-{
-    import core.sys.windows.windows : CreateFont, CreatePen, FW_BOLD, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FIXED_PITCH, FF_MODERN, DEFAULT_CHARSET, PS_SOLID;
+        // NSApplication has to exist before any window or status item is
+        // created, and before the run loop the event tap attaches to.
+        knv_app_init();
+    }
 
-    registerWindowClass();
-    registerKeyboardHook();
-
-    mainPen = CreatePen(PS_SOLID, mainPenWidth, mainPenColour);
-    borderPen = CreatePen(PS_SOLID, borderPenWidth * 2 + mainPenWidth, borderPenColour);
-    labelFont = CreateFont(18, 0, 0, 0, FW_BOLD, false, false, false, DEFAULT_CHARSET,
-                           OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
-                           FIXED_PITCH | FF_MODERN, "Courier New"w.ptr);
-}
-
-extern(C)
-int _main(string[] args)
-{
     loadAllConfigs();
 
     if (handleArgsAndContinue(args))
@@ -53,6 +71,16 @@ int _main(string[] args)
         resetGrid();
 
         addNotifyIcon();
+
+        // On Windows the hook always installs. On macOS it needs Accessibility
+        // permission, so a failure here is the normal first-run state rather
+        // than an error: keep running and poll until the user grants it, then
+        // install the tap without needing a restart. See MACOS-PORT.md §7.1.
+        if (!installKeyboardHook())
+        {
+            startPermissionPolling();
+            rebuildStatusMenu();
+        }
 
         messageLoop();
 
@@ -99,21 +127,44 @@ void showHelp(std.getopt.Option[] getoptOptions)
     import std.conv : to;
 
     auto helpAppender = appender!(char[]);
-    defaultGetoptFormatter(helpAppender, (programInfo ~ "\r\n\r\n"w ~ usageHelpString).to!string, getoptOptions);
+
+    version (Windows)
+    {
+        enum separator = "\r\n\r\n"w;
+    }
+    else
+    {
+        enum separator = "\n\n"w;
+    }
+
+    defaultGetoptFormatter(helpAppender, (programInfo ~ separator ~ usageHelpString).to!string, getoptOptions);
 
     showInfo(helpAppender[]);
 }
 
 void showVersion()
 {
-    showInfo(programName ~ " " ~ gitVersion);
+    import std.conv : to;
+
+    showInfo(programName.to!string ~ " " ~ gitVersion);
 }
 
 void messageLoop()
 {
-    MSG msg;
-    while (GetMessage(&msg, null, 0, 0) && !quitting)
+    version (Windows)
     {
-        DispatchMessage(&msg);
+        MSG msg;
+        while (GetMessage(&msg, null, 0, 0) && !quitting)
+        {
+            DispatchMessage(&msg);
+        }
+    }
+    else
+    {
+        import keynavish.platform.macos.shim : knv_run;
+
+        // [NSApp run] drives the same CFRunLoop the event tap source is
+        // attached to. It does not return: terminate exits the process.
+        knv_run();
     }
 }

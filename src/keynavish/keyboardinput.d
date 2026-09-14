@@ -1,8 +1,9 @@
 module keynavish.keyboardinput;
 
-import core.sys.windows.windows;
 import std.typecons : Nullable, BitFlags;
 import keynavish;
+import keynavish.types;
+import keynavish.platform;
 
 static this()
 {
@@ -49,18 +50,9 @@ static this()
     registerKeyBinding("ctrl+n cut-right,cut-down");
 }
 
-enum ModifierKey
-{
-    none   = 0,
-    ctrl   = 1 << 0,
-    shift  = 1 << 1,
-    alt    = 1 << 2,
-    super_ = 1 << 3,
-}
-
 struct KeyCombination
 {
-    DWORD vkCode;
+    KeyCode keyCode;
     BitFlags!ModifierKey modifiers;
 }
 
@@ -72,11 +64,6 @@ struct KeyBinding
 
 KeyBinding[] regularKeyBindings;
 KeyBinding[] startKeyBindings;
-
-void registerKeyboardHook()
-{
-    SetWindowsHookEx(WH_KEYBOARD_LL, &exceptionHandlerWrapper!lowLevelKeyboardProc, GetModuleHandle(null), 0);
-}
 
 Nullable!KeyBinding parseKeyBindingString(string bindingString)
 {
@@ -117,21 +104,20 @@ Nullable!KeyBinding parseKeyBindingString(string bindingString)
 
 Nullable!KeyCombination parseKeyCombination(string[] keyStrings)
 {
-    //TODO: Refactor
-    //TODO: Add more keys from X11/keysymdef.h
-
     KeyCombination combination;
+    bool keyCodeSet;
 
     foreach (keyString; keyStrings)
     {
-        bool setVkCode(DWORD vkCode)
+        bool setKeyCode(KeyCode keyCode)
         {
-            if (combination.vkCode != 0)
+            if (keyCodeSet)
             {
                 showError("More than one non-modifier key given: " ~ keyString);
                 return false;
             }
-            combination.vkCode = vkCode;
+            combination.keyCode = keyCode;
+            keyCodeSet = true;
             return true;
         }
 
@@ -139,150 +125,28 @@ Nullable!KeyCombination parseKeyCombination(string[] keyStrings)
         {
             case "ctrl":
                 combination.modifiers |= ModifierKey.ctrl;
-                break;
+                continue;
             case "alt":
                 combination.modifiers |= ModifierKey.alt;
-                break;
+                continue;
             case "shift":
                 combination.modifiers |= ModifierKey.shift;
-                break;
+                continue;
             case "super":
                 combination.modifiers |= ModifierKey.super_;
-                break;
-            case "Super_L":
-                if (!setVkCode(VK_LWIN)) return typeof(return)();
-                break;
-            case "Super_R":
-                if (!setVkCode(VK_RWIN)) return typeof(return)();
-                break;
-            case "semicolon":
-                if (!setVkCode(VK_OEM_1)) return typeof(return)();
-                break;
-            case "Escape":
-                if (!setVkCode(VK_ESCAPE)) return typeof(return)();
-                break;
-            case "Tab":
-                if (!setVkCode(VK_TAB)) return typeof(return)();
-                break;
-            case "Left":
-                if (!setVkCode(VK_LEFT)) return typeof(return)();
-                break;
-            case "Up":
-                if (!setVkCode(VK_UP)) return typeof(return)();
-                break;
-            case "Right":
-                if (!setVkCode(VK_RIGHT)) return typeof(return)();
-                break;
-            case "Down":
-                if (!setVkCode(VK_DOWN)) return typeof(return)();
-                break;
-            case "Insert":
-                if (!setVkCode(VK_INSERT)) return typeof(return)();
-                break;
-            case "Home":
-                if (!setVkCode(VK_HOME)) return typeof(return)();
-                break;
-            case "End":
-                if (!setVkCode(VK_END)) return typeof(return)();
-                break;
-            case "Prior":
-            case "Page_Up":
-                if (!setVkCode(VK_PRIOR)) return typeof(return)();
-                break;
-            case "Next":
-            case "Page_Down":
-                if (!setVkCode(VK_NEXT)) return typeof(return)();
-                break;
-            case "Delete":
-                if (!setVkCode(VK_DELETE)) return typeof(return)();
-                break;
-            case "Return":
-                if (!setVkCode(VK_RETURN)) return typeof(return)();
-                break;
-            case "space":
-                if (!setVkCode(VK_SPACE)) return typeof(return)();
-                break;
-            case "bracketleft":
-                if (!setVkCode(VK_OEM_4)) return typeof(return)();
-                break;
-            case "backslash":
-                if (!setVkCode(VK_OEM_5)) return typeof(return)();
-                break;
-            case "bracketright":
-                if (!setVkCode(VK_OEM_6)) return typeof(return)();
-                break;
-            case "at":
-                //HACK: This doesn't have its own vkcode on Windows, but on X11 it has its own keysym
-                if (!setVkCode('2')) return typeof(return)();
-                break;
-            case "plus":
-                if (!setVkCode(VK_OEM_PLUS)) return typeof(return)();
-                break;
-            case "comma":
-                if (!setVkCode(VK_OEM_COMMA)) return typeof(return)();
-                break;
-            case "minus":
-                if (!setVkCode(VK_OEM_MINUS)) return typeof(return)();
-                break;
-            case "period":
-                if (!setVkCode(VK_OEM_PERIOD)) return typeof(return)();
-                break;
-            case "a":
-            case "b":
-            case "c":
-            case "d":
-            case "e":
-            case "f":
-            case "g":
-            case "h":
-            case "i":
-            case "j":
-            case "k":
-            case "l":
-            case "m":
-            case "n":
-            case "o":
-            case "p":
-            case "q":
-            case "r":
-            case "s":
-            case "t":
-            case "u":
-            case "v":
-            case "w":
-            case "x":
-            case "y":
-            case "z":
-                if(!setVkCode('A' + (keyString[0] - 'a'))) return typeof(return)();
-                break;
-            case "0":
-            case "1":
-            case "2":
-            case "3":
-            case "4":
-            case "5":
-            case "6":
-            case "7":
-            case "8":
-            case "9":
-                if (!setVkCode(keyString[0])) return typeof(return)();
-                break;
-            case "KP_0":
-            case "KP_1":
-            case "KP_2":
-            case "KP_3":
-            case "KP_4":
-            case "KP_5":
-            case "KP_6":
-            case "KP_7":
-            case "KP_8":
-            case "KP_9":
-                if (!setVkCode(0x60 + keyString[3] - '0')) return typeof(return)();
-                break;
+                continue;
             default:
-                showError("Unknown key: " ~ keyString);
-                return typeof(return)();
+                break;
         }
+
+        auto resolved = resolveKeyName(keyString);
+        if (resolved.isNull)
+        {
+            showError("Unknown key: " ~ keyString);
+            return typeof(return)();
+        }
+
+        if (!setKeyCode(resolved.get())) return typeof(return)();
     }
 
     return typeof(return)(combination);
@@ -325,126 +189,115 @@ bool registerKeyBinding(string bindingString)
     return true;
 }
 
-extern(Windows)
-LRESULT lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
+private bool handleGridNavKey(KeyCode keyCode, BitFlags!ModifierKey modifiers)
 {
-    import std.algorithm : find;
-    import std.ascii : toLower;
     import std.conv : to;
-    import std.range : empty;
 
-    auto hookStruct = cast(PKBDLLHOOKSTRUCT) lParam;
-
-    bool handleGridNavKey(DWORD vkCode, BitFlags!ModifierKey modifiers)
+    if (!gridNavEnabled)
     {
-        import core.sys.windows.windows : VK_ESCAPE;
+        return false;
+    }
 
-        if (!gridNavEnabled)
-        {
-            return false;
-        }
-
-        if (vkCode == VK_ESCAPE)
-        {
-            enableGridNav(false);
-            redrawWindow();
-            return true;
-        }
-
-        if (modifiers || vkCode < 'A' || vkCode > 'Z')
-        {
-            return false;
-        }
-
-        auto value = toLower(cast(char) vkCode) - 'a';
-
-        if (gridNavState == GridNavState.row)
-        {
-            if (value >= grid.rows)
-            {
-                return false;
-            }
-
-            gridNavRow = value;
-            gridNavState = GridNavState.column;
-            redrawWindow();
-            return true;
-        }
-
-        if (value >= grid.columns)
-        {
-            return false;
-        }
-
-        gridNavColumn = value;
-        cellSelect((gridNavColumn + 1).to!string ~ "x" ~ (gridNavRow + 1).to!string);
-        resetGridNavSelection();
+    if (isEscapeKey(keyCode))
+    {
+        enableGridNav(false);
         redrawWindow();
         return true;
     }
 
-    if (nCode == HC_ACTION)
+    if (modifiers)
     {
-        switch (wParam)
+        return false;
+    }
+
+    auto character = characterForKeyCode(keyCode);
+    if (character < 'a' || character > 'z')
+    {
+        return false;
+    }
+
+    auto value = cast(int)(character - 'a');
+
+    if (gridNavState == GridNavState.row)
+    {
+        if (value >= grid.rows)
         {
-            case WM_KEYDOWN:
-            case WM_SYSKEYDOWN:
-                BitFlags!ModifierKey modifiers = ModifierKey.none;
-                modifiers |= (GetKeyState(VK_CONTROL) & 0x8000) != 0 ? ModifierKey.ctrl : ModifierKey.none;
-                modifiers |= (GetKeyState(VK_SHIFT  ) & 0x8000) != 0 ? ModifierKey.shift : ModifierKey.none;
-                modifiers |= (hookStruct.flags & LLKHF_ALTDOWN) != 0 ? ModifierKey.alt : ModifierKey.none;
-                modifiers |= ((GetKeyState(VK_LWIN) & 0x8000) | (GetKeyState(VK_RWIN) & 0x8000)) != 0 ? ModifierKey.super_ : ModifierKey.none;
+            return false;
+        }
 
-                auto pressedCombination = KeyCombination(hookStruct.vkCode, modifiers);
+        gridNavRow = value;
+        gridNavState = GridNavState.column;
+        redrawWindow();
+        return true;
+    }
 
-                if (!active)
-                {
-                    auto keyBindingRange = startKeyBindings.find!(b => b.keyCombination == pressedCombination);
-                    if (!keyBindingRange.empty)
-                    {
-                        processCommands(keyBindingRange[0].commands);
-                        return 1;
-                    }
-                    else
-                    {
-                        return CallNextHookEx(null, nCode, wParam, lParam);
-                    }
-                }
-                else
-                {
-                    if (waitingForRecordingKey)
-                    {
-                        setRecordingKey(hookStruct.vkCode);
-                    }
-                    else if (replaying)
-                    {
-                        replay(hookStruct.vkCode);
-                    }
-                    else if (handleGridNavKey(hookStruct.vkCode, modifiers))
-                    {
-                        return 1;
-                    }
-                    else
-                    {
-                        auto keyBindingRange = regularKeyBindings.find!(b => b.keyCombination == pressedCombination);
-                        if (!keyBindingRange.empty)
-                        {
-                            if (recordingActive)
-                            {
-                                recordCommands(keyBindingRange[0].commands);
-                            }
-                            processCommands(keyBindingRange[0].commands);
-                        }
-                    }
+    if (value >= grid.columns)
+    {
+        return false;
+    }
 
-                    return ((hookStruct.vkCode >= VK_LSHIFT && hookStruct.vkCode <= VK_RCONTROL) || hookStruct.vkCode == VK_LWIN || hookStruct.vkCode == VK_RWIN)
-                        ? CallNextHookEx(null, nCode, wParam, lParam)
-                        : 1;
-                }
-            default:
-                break;
+    gridNavColumn = value;
+    cellSelect((gridNavColumn + 1).to!string ~ "x" ~ (gridNavRow + 1).to!string);
+    resetGridNavSelection();
+    redrawWindow();
+    return true;
+}
+
+//
+// The whole decision path for a key press, shared between platforms: which
+// binding matches, whether grid-nav intercepts it, whether it gets recorded,
+// and whether the key should be swallowed. Each platform contributes only a
+// thin callback that translates its native event into (keyCode, modifiers) and
+// acts on the returned "consume" flag. See MACOS-PORT.md §5.2b.
+//
+// Returns true when the key should be swallowed rather than passed on.
+//
+bool handleKeyDown(KeyCode keyCode, BitFlags!ModifierKey modifiers)
+{
+    import std.algorithm : find;
+    import std.range : empty;
+
+    auto pressedCombination = KeyCombination(keyCode, modifiers);
+
+    if (!active)
+    {
+        auto keyBindingRange = startKeyBindings.find!(b => b.keyCombination == pressedCombination);
+        if (!keyBindingRange.empty)
+        {
+            processCommands(keyBindingRange[0].commands);
+            return true;
+        }
+
+        return false;
+    }
+
+    if (waitingForRecordingKey)
+    {
+        setRecordingKey(keyCode);
+    }
+    else if (replaying)
+    {
+        replay(keyCode);
+    }
+    else if (handleGridNavKey(keyCode, modifiers))
+    {
+        return true;
+    }
+    else
+    {
+        auto keyBindingRange = regularKeyBindings.find!(b => b.keyCombination == pressedCombination);
+        if (!keyBindingRange.empty)
+        {
+            if (recordingActive)
+            {
+                recordCommands(keyBindingRange[0].commands);
+            }
+            processCommands(keyBindingRange[0].commands);
         }
     }
 
-    return CallNextHookEx(null, nCode, wParam, lParam);
+    // While the grid is up every key is swallowed, so stray keystrokes don't
+    // reach the application underneath -- except the modifiers themselves,
+    // which must keep flowing or the OS loses track of their state.
+    return !isModifierKey(keyCode);
 }

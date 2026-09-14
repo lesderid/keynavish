@@ -1,22 +1,41 @@
 module keynavish.helpers;
 
 import keynavish;
-import core.sys.windows.windows;
+import keynavish.types;
 
-LONG width(RECT rect)
+int width(Rect rect)
 {
     return rect.right - rect.left;
 }
 
-LONG height(RECT rect)
+int height(Rect rect)
 {
     return rect.bottom - rect.top;
 }
 
-bool contains(RECT rect, POINT point)
+bool contains(Rect rect, Point point)
 {
     return point.x >= rect.left && point.x < rect.right &&
            point.y >= rect.top && point.y < rect.bottom;
+}
+
+/// Intersection of two rectangles, or an empty rectangle when they don't overlap.
+Rect intersect(Rect a, Rect b)
+{
+    import std.algorithm : max, min;
+
+    auto result = Rect(max(a.left, b.left), max(a.top, b.top),
+                       min(a.right, b.right), min(a.bottom, b.bottom));
+
+    if (result.right < result.left) result.right = result.left;
+    if (result.bottom < result.top) result.bottom = result.top;
+
+    return result;
+}
+
+bool isEmpty(Rect rect)
+{
+    return rect.width <= 0 || rect.height <= 0;
 }
 
 string expandPath(string inputString)
@@ -27,18 +46,47 @@ string expandPath(string inputString)
 
     if (inputString.canFind('~'))
     {
-        auto homeDir = environment.get("HOME", environment.get("USERPROFILE"));
-
-        if (homeDir is null)
+        version (Windows)
         {
-            showWarning(inputString ~ ": USERPROFILE and HOME environment variables both missing, defaulting to working dir for path expansion");
-            homeDir = ".";
+            auto homeDir = environment.get("HOME", environment.get("USERPROFILE"));
+
+            if (homeDir is null)
+            {
+                showWarning(inputString ~ ": USERPROFILE and HOME environment variables both missing, defaulting to working dir for path expansion");
+                homeDir = ".";
+            }
+        }
+        else
+        {
+            import keynavish.platform.macos.shim : knv_home_directory;
+            import core.stdc.string : strlen;
+
+            auto homeDir = environment.get("HOME");
+
+            if (homeDir is null)
+            {
+                auto nsHome = knv_home_directory();
+                homeDir = nsHome is null ? null : nsHome[0 .. strlen(nsHome)].idup;
+            }
+
+            if (homeDir is null)
+            {
+                showWarning(inputString ~ ": HOME environment variable missing and NSHomeDirectory() unavailable, defaulting to working dir for path expansion");
+                homeDir = ".";
+            }
         }
 
         inputString = inputString.replace("~", homeDir);
     }
 
-    return inputString.replace("/", "\\");
+    version (Windows)
+    {
+        return inputString.replace("/", "\\");
+    }
+    else
+    {
+        return inputString;
+    }
 }
 
 string[][] parseCommaDelimitedCommands(string input)

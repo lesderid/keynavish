@@ -5,3 +5,4 @@
 /enc_temp_folder/
 /.dub/
 /src/keynavish/versioninfo.*
+/build/
