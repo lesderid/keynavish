@@ -3,12 +3,12 @@ name: CI
 on: [push, pull_request]
 
 jobs:
-  build:
+  windows:
     runs-on: windows-latest
 
     steps:
         - name: Checkout keynavish
-          uses: actions/checkout@v2
+          uses: actions/checkout@v4
           with:
             fetch-depth: 0
         - name: Install dmd and dub
@@ -24,3 +24,32 @@ jobs:
           with:
             name: keynavish-${{ github.sha }}-x86_64
             path: out/keynavish-${{ github.sha }}-x86_64.exe
+
+  macos:
+    runs-on: macos-latest
+
+    steps:
+        - name: Checkout keynavish
+          uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+        # The official LDC release ships both arm64 and x86_64 runtime
+        # libraries, which Homebrew's ldc does not -- needed for the universal
+        # build. See tools/build-macos.sh.
+        - name: Install ldc and dub
+          uses: dlang-community/setup-dlang@v1
+          with:
+            compiler: ldc-latest
+        - name: Run tests
+          run: ./tools/run-tests.sh
+        - name: Build keynavish.app
+          run: ./tools/build-macos.sh release
+        - name: Show bundle architectures
+          run: lipo -archs out/keynavish.app/Contents/MacOS/keynavish
+        - name: Package bundle
+          run: ditto -c -k --keepParent out/keynavish.app "keynavish-${{ github.sha }}-macos.zip"
+        - name: Upload keynavish.app
+          uses: actions/upload-artifact@v4
+          with:
+            name: keynavish-${{ github.sha }}-macos
+            path: keynavish-${{ github.sha }}-macos.zip

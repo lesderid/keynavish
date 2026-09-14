@@ -24,8 +24,9 @@ preBuildCommands "./tools/generate-version-info.sh" platform="osx"
 
 // The Objective-C shim is compiled by clang and handed to the linker as an
 // object file; D never touches AppKit directly. See MACOS-PORT.md §5.5.
-// -fmodules-cache-path keeps clang's module cache inside the build tree.
-preBuildCommands "mkdir -p build && clang -c -fobjc-arc -fmodules -fmodules-cache-path=build/modulecache -mmacosx-version-min=13.0 -o build/shim.o src/keynavish/platform/macos/shim.m" platform="osx"
+// -fmodules-cache-path keeps clang's module cache inside the build tree, and
+// the two -arch flags make it a fat object so one build serves both slices.
+preBuildCommands "mkdir -p build && clang -c -arch arm64 -arch x86_64 -fobjc-arc -fmodules -fmodules-cache-path=build/modulecache -mmacosx-version-min=13.0 -o build/shim.o src/keynavish/platform/macos/shim.m" platform="osx"
 
 lflags "build/shim.o" platform="osx"
 

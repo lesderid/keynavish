@@ -3,7 +3,9 @@
 Plan for bringing keynavish (currently Windows-only, ~2200 lines of D) to macOS,
 keeping keynav configuration-file compatibility.
 
-Status: **plan only, nothing implemented.**
+Status: **phases 0-6 implemented on macOS** (see §10). The Windows build is
+refactored but unverified -- no Windows machine was available. §14 records where
+implementation diverged from this plan.
 
 ---
 
@@ -37,7 +39,7 @@ Anything that can't be made to match goes in §11 and gets a compatibility issue
 
 ## 2. Decisions to make up front
 
-These shape everything below. Decided, but nothing is implemented yet.
+These shape everything below. All are now implemented except where §14 says otherwise.
 
 | Question | Decision |
 |---|---|
@@ -93,10 +95,16 @@ recording file format logic.
   default target `arm64-apple-darwin`, with `x86-64` also registered — so
   universal binaries can be produced locally. Xcode 26.5 SDK is present, which
   covers clang for the shim.
-* **`dub` is not installed** — LDC's Homebrew formula doesn't bundle it.
-  `brew install dub`.
+* `dub` 1.42.0 is installed alongside it.
 * Ship a universal binary: build twice (`-mtriple=arm64-apple-macos13`,
   `-mtriple=x86_64-apple-macos13`) and `lipo -create` the results.
+* **Two caveats found during implementation**, both pointing the same way — a
+  real release needs the official LDC release rather than the Homebrew package:
+  * Homebrew's LDC ships **arm64-only** druntime and phobos, so it physically
+    cannot produce the x86_64 slice. `ldc2-*-osx-universal` ships both.
+  * Its runtime libraries are themselves built for macOS 26, so linking with
+    `-mmacosx-version-min=13.0` emits "built for newer macOS version" warnings
+    and the result may not actually run on 13.
 * `dub.sdl` gains `platform=` suffixes rather than separate configurations —
   `libs "User32" "Gdi32" platform="windows"`,
   `lflags "-framework" "Cocoa" platform="osx"`, and so on. On macOS the frameworks
@@ -486,6 +494,12 @@ Existing colours carry over unchanged: main pen `RGB(30,64,64)`, border white,
 grid-nav labels `RGB(0,51,0)` / `RGB(0,77,77)` with `RGB(204,204,204)` /
 `RGB(255,255,255)` text.
 
+**Colours must be created in device RGB.** `CGColorCreateGenericRGB` is
+colour-managed on its way to the display: `RGB(30,64,64)` rendered as
+`(38,81,81)`, which would have made the macOS overlay visibly different from the
+Windows one. Use `CGColorCreate` with a `CGColorSpaceCreateDeviceRGB` space so
+the components are taken literally. Caught by the render test (§14).
+
 **Trap:** a `CGContext` from an `NSView` has a Y-up coordinate system. If the CTM
 is flipped to keep the Y-down grid math, text renders upside-down unless the
 **text matrix** is flipped too (`CGContextSetTextMatrix` with a `(1, 0, 0, -1)`
@@ -540,8 +554,14 @@ the actually-focused window. **Use AX.**
 
 ### 6.8 Displays
 
-`EnumDisplayMonitors` → `CGGetActiveDisplayList` + `CGDisplayBounds` per display.
-`GetSystemMetrics(SM_*VIRTUALSCREEN)` → union of those rects.
+`EnumDisplayMonitors` → **`NSScreen` through the shim**, not
+`CGGetActiveDisplayList` as originally planned: that call returns zero active
+displays on macOS 26 (`err=0, count=0`) while `NSScreen` correctly reports them.
+See §14. `GetSystemMetrics(SM_*VIRTUALSCREEN)` → union of those rects.
+
+Using `NSScreen` for enumeration also removes an ordering hazard, since the
+overlay windows are positioned against `NSScreen` too: index *i* means the same
+display in both places.
 
 `resetGrid`'s "find the display containing the cursor" logic works unchanged once
 `displayRects()` is implemented, since both use Y-down global coordinates.
@@ -780,16 +800,20 @@ keynavish.app/Contents/
 
 Each phase should leave the tree building on both platforms.
 
+Status: phases 0-6 are implemented and building on macOS. Phase 7 is partly
+done (CI and README yes; signing and notarization not, since they need
+credentials). Ticks mark what is actually in the tree.
+
 | Phase | Work | Size |
 |---|---|---|
-| **0** | LDC + dub macOS config, clang shim build wiring, `.app` assembly script, **stable self-signed dev certificate** (§7.2). Deliverable: an accessory app with an empty status item that launches and quits | M |
-| **1** | Platform refactor (§5): `version()`-gate the existing Windows code, extract the neutral types, make `installKeyboardHook` callable after startup (§7.1). No new platform code, no behaviour change. **Verify on Windows before proceeding** | M |
-| **2** | Event tap + first-run permission flow + layout-aware keycode resolution (§6.2–6.3, §7.1). Deliverable: bindings fire, events are correctly swallowed, permission can be granted without a restart. No UI yet | L |
-| **3** | Overlay windows + Core Graphics drawing, one per display (§6.4–6.5). Deliverable: grid and grid-nav labels render correctly, including Retina, multi-display and over a fullscreen app | L |
-| **4** | Mouse synthesis: warp, click, doubleclick, scroll, drag (§6.6) | M |
-| **5** | `windowzoom` via AX, `cursorzoom`, display-arrangement change handling (§6.7–6.8) | S |
-| **6** | Status item menu, launch at login, edit config, about, restart (§6.9–6.11, §6.13) | M |
-| **7** | Universal build + `lipo`, Developer ID signing, notarization, CI, README, first-run permission documentation | M |
+| **0** ✅ | LDC + dub macOS config, clang shim build wiring, `.app` assembly script, **stable self-signed dev certificate** (§7.2). Deliverable: an accessory app with an empty status item that launches and quits | M |
+| **1** ✅ | Platform refactor (§5): `version()`-gate the existing Windows code, extract the neutral types, make `installKeyboardHook` callable after startup (§7.1). No new platform code, no behaviour change. **Verify on Windows before proceeding** | M |
+| **2** ✅ | Event tap + first-run permission flow + layout-aware keycode resolution (§6.2–6.3, §7.1). Deliverable: bindings fire, events are correctly swallowed, permission can be granted without a restart. No UI yet | L |
+| **3** ✅ | Overlay windows + Core Graphics drawing, one per display (§6.4–6.5). Deliverable: grid and grid-nav labels render correctly, including Retina, multi-display and over a fullscreen app | L |
+| **4** ✅ | Mouse synthesis: warp, click, doubleclick, scroll, drag (§6.6) | M |
+| **5** ✅ | `windowzoom` via AX, `cursorzoom`, display-arrangement change handling (§6.7–6.8) | S |
+| **6** ✅ | Status item menu, launch at login, edit config, about, restart (§6.9–6.11, §6.13) | M |
+| **7** ◐ | Universal build + `lipo`, Developer ID signing, notarization, CI, README, first-run permission documentation | M |
 | *later* | Recordings: `record`/`playback` with VK-code-compatible output (§6.3) | M |
 
 Phases 2 and 3 are independent and can be worked in either order; 2 first gives a
@@ -852,3 +876,73 @@ user-visible:
 * **Homebrew cask** — natural follow-up once notarized releases exist (§8).
 * **Standardising both platforms on LDC** — declined for now (§2), but it would
   remove a class of "reproduces on only one platform" ambiguity (§4).
+
+## 14. Implementation notes
+
+Where the code ended up differing from the plan above, and why. Recorded so the
+plan stays honest rather than quietly wrong.
+
+### 14.1 Plan changes forced by reality
+
+| Planned | Actual | Why |
+|---|---|---|
+| Enumerate displays with `CGGetActiveDisplayList` + `CGDisplayBounds` (§6.8) | **`NSScreen`, via the shim** | `CGGetActiveDisplayList` returns `err=0, count=0` on macOS 26 while `NSScreen` correctly reports both displays. The CoreGraphics call is the documented one and needs no permission, but it cannot be relied on. Bonus: the overlay windows are positioned against `NSScreen` anyway, so using it for enumeration too means index *i* is the same display in both places |
+| `CGColorCreateGenericRGB` for grid colours (§6.5) | **`CGColorCreate` with a device RGB space** | Generic RGB is colour-managed on its way to the display: `RGB(30,64,64)` came out as `(38,81,81)`. The grid has to match the Windows build exactly, so the components must be taken literally |
+| Universal binary built locally (§4) | **arm64 only with the Homebrew toolchain** | Homebrew's LDC ships arm64-only druntime/phobos. `tools/build-macos.sh` detects this and says what is needed rather than emitting a wall of linker errors. CI uses the official LDC, which ships both slices |
+| `primaryDeviceResolution` deleted (§3) | **Kept, Windows-only** | Deleting it meant changing how `warp` computes absolute coordinates on Windows, which is untestable here. See §14.3 |
+
+### 14.2 Things worth knowing that the plan didn't anticipate
+
+* **A bundle is required earlier than expected.** `NSStatusBar` kills an
+  unbundled process outright — silently, with exit status 0. The `.app`
+  assembly script had to exist before anything could be tested at all.
+* **Window-server access can't be assumed in a build environment.** Anything
+  touching AppKit dies silently when the process has no window-server
+  connection; only the *build* is safely headless.
+* **`[NSApp run]` never returns.** `terminate:` exits the process, so no cleanup
+  after `messageLoop()` runs on macOS. Nothing currently depends on that, but
+  `removeNotifyIcon()` in `runKeynavish` is dead code on macOS.
+* **CoreGraphics window bounds are not window frames.** `CGWindowListCopyWindowInfo`
+  reported the overlay windows as inset by ~19x11pt; the actual `NSWindow.frame`
+  was correct. Don't use the former to verify geometry.
+
+### 14.3 Known issues, deliberately not fixed
+
+* **Windows `warp` is wrong on multi-monitor setups.** It normalises
+  `MOUSEEVENTF_ABSOLUTE` coordinates against the *primary display* resolution
+  while the grid works in virtual-screen coordinates, so warping onto a
+  secondary monitor lands in the wrong place. This predates the port and is
+  preserved verbatim. The fix is `MOUSEEVENTF_VIRTUALDESK` plus normalising
+  against `virtualScreenRectangle`, but it is a behaviour change to a platform
+  that could not be tested here, so it is left for a separate change.
+* **A comma inside a quoted argument still splits the command.**
+  `sh "echo hello, world"` parses as two commands. The outer comma split only
+  honours quotes at the start of a field. Shared with the Windows build; pinned
+  by a test so it can't drift between platforms.
+
+### 14.4 Testing
+
+Three suites under `tests/`, run by `tools/run-tests.sh`. None need
+Accessibility permission, so they run unattended and in CI.
+
+| Suite | Checks | Covers |
+|---|---:|---|
+| `config_test.d` | 31 | Stock keybindings all register, the repository `keynavrc` parses completely (61 binding lines), command verification, `record`/`playback` still load on macOS, path expansion |
+| `keys_test.d` | 47 | Key-name resolution against the live layout, keycode round-tripping for grid-nav, distinctness, rejection of unknown names, modifier predicates |
+| `render_test.d` | 14 | Renders the grid into an offscreen bitmap: geometry from `splitGrid`, global-to-window translation, exact colour match with the Windows constants, grid-nav label placement and selection highlight |
+
+The render test is what caught the colour-management bug, which would otherwise
+have shipped as a subtle visual difference nobody could easily name.
+
+### 14.5 Not verified
+
+* **The Windows build.** Refactored but never compiled or run — no Windows
+  machine was available. Windows code was moved with behaviour preserved
+  verbatim and the risky parts left alone, but it needs a real build before
+  anyone relies on it. This is the single largest gap.
+* **The event tap and everything downstream of it** — key handling, mouse
+  synthesis, `windowzoom`. All need Accessibility permission, which has to be
+  granted interactively. The app correctly detects its absence and enters the
+  polling state, which is as far as automated testing can reach.
+* **Retina rendering and multi-display overlay placement**, beyond the window
+  geometry reported by AppKit. Both need eyes on a screen.
