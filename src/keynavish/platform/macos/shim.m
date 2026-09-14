@@ -334,6 +334,13 @@ void knv_overlay_create(int count, const double *rects)
             window.excludedFromWindowsMenu = YES;
             [window setRestorable:NO];
 
+            // Programmatically created NSWindows default to releasedWhenClosed
+            // YES, which pairs badly with the strong reference held in
+            // g_overlay_windows. 200 create/destroy cycles did not actually
+            // misbehave without this, so it is hardening rather than a fix for
+            // an observed crash -- but relying on that is not worth it.
+            window.releasedWhenClosed = NO;
+
             KnvOverlayView *view = [[KnvOverlayView alloc] initWithFrame:frame];
             view.displayIndex = i;
             window.contentView = view;

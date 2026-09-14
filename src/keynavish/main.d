@@ -64,9 +64,15 @@ int runKeynavish(string[] args)
 
     loadAllConfigs();
 
+    debugLog("loaded %d regular and %d start key bindings",
+             regularKeyBindings.length, startKeyBindings.length);
+
     if (handleArgsAndContinue(args))
     {
         createWindow();
+
+        debugLog("%d display(s), virtual screen %s",
+                 displayRectangles.length, virtualScreenRectangle);
 
         resetGrid();
 
@@ -76,8 +82,14 @@ int runKeynavish(string[] args)
         // permission, so a failure here is the normal first-run state rather
         // than an error: keep running and poll until the user grants it, then
         // install the tap without needing a restart. See MACOS-PORT.md §7.1.
-        if (!installKeyboardHook())
+        if (installKeyboardHook())
         {
+            debugLog("keyboard hook installed");
+        }
+        else
+        {
+            debugLog("no keyboard hook yet (accessibility permission granted: %s); polling",
+                     hasAccessibilityPermission);
             startPermissionPolling();
             rebuildStatusMenu();
         }

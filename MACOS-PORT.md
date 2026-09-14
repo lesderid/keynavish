@@ -906,7 +906,19 @@ plan stays honest rather than quietly wrong.
   reported the overlay windows as inset by ~19x11pt; the actual `NSWindow.frame`
   was correct. Don't use the former to verify geometry.
 
-### 14.3 Known issues, deliberately not fixed
+### 14.3 Deliberate behaviour changes to Windows
+
+Only one, and it is a robustness fix rather than a feature change:
+
+* **`resetGrid` no longer asserts when the cursor is outside every display
+  rectangle**, it falls back to the whole virtual screen. The original did
+  `assert(!cursorScreen.empty)` and then indexed the range -- which in a release
+  build, where the assert is compiled out, indexes an empty range. The case is
+  reachable on macOS (the cursor can sit between mismatched displays, or on the
+  exclusive edge, since `contains` uses `< right`/`< bottom`), so a fallback was
+  needed there; having the two platforms diverge on it would have been worse.
+
+### 14.4 Known issues, deliberately not fixed
 
 * **Windows `warp` is wrong on multi-monitor setups.** It normalises
   `MOUSEEVENTF_ABSOLUTE` coordinates against the *primary display* resolution
@@ -920,7 +932,7 @@ plan stays honest rather than quietly wrong.
   honours quotes at the start of a field. Shared with the Windows build; pinned
   by a test so it can't drift between platforms.
 
-### 14.4 Testing
+### 14.5 Testing
 
 Three suites under `tests/`, run by `tools/run-tests.sh`. None need
 Accessibility permission, so they run unattended and in CI.
@@ -934,7 +946,7 @@ Accessibility permission, so they run unattended and in CI.
 The render test is what caught the colour-management bug, which would otherwise
 have shipped as a subtle visual difference nobody could easily name.
 
-### 14.5 Not verified
+### 14.6 Not verified
 
 * **The Windows build.** Refactored but never compiled or run — no Windows
   machine was available. Windows code was moved with behaviour preserved
