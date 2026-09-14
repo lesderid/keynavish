@@ -53,15 +53,6 @@ else
 
 int runKeynavish(string[] args)
 {
-    version (OSX)
-    {
-        import keynavish.platform.macos.shim : knv_app_init;
-
-        // NSApplication has to exist before any window or status item is
-        // created, and before the run loop the event tap attaches to.
-        knv_app_init();
-    }
-
     loadAllConfigs();
 
     debugLog("loaded %d regular and %d start key bindings",
@@ -69,6 +60,16 @@ int runKeynavish(string[] args)
 
     if (handleArgsAndContinue(args))
     {
+        version (OSX)
+        {
+            import keynavish.platform.macos.shim : knv_app_init;
+
+            // NSApplication has to exist before any window or status item is
+            // created, and before the run loop the event tap attaches to -- but
+            // not before this point, so --version and --help never touch AppKit.
+            knv_app_init();
+        }
+
         createWindow();
 
         debugLog("%d display(s), virtual screen %s",
@@ -151,14 +152,39 @@ void showHelp(std.getopt.Option[] getoptOptions)
 
     defaultGetoptFormatter(helpAppender, (programInfo ~ separator ~ usageHelpString).to!string, getoptOptions);
 
-    showInfo(helpAppender[]);
+    showMessage(helpAppender[].idup);
 }
 
 void showVersion()
 {
     import std.conv : to;
 
-    showInfo(programName.to!string ~ " " ~ gitVersion);
+    showMessage(programName.to!string ~ " " ~ gitVersion);
+}
+
+//
+// Output for --help and --version.
+//
+// Windows keynavish is a GUI-subsystem binary with no console attached, so it
+// has always used a message box. On macOS that would not work at all: alerts are
+// presented asynchronously on the main queue (§6.12) and these paths exit before
+// the run loop ever starts, so the alert would never appear -- `--version`
+// printed nothing whatsoever. Writing to stdout is both the working option and
+// the one a Unix user expects.
+//
+private void showMessage(string message)
+{
+    version (Windows)
+    {
+        showInfo(message);
+    }
+    else
+    {
+        import std.stdio : writeln, stdout;
+
+        writeln(message);
+        stdout.flush();
+    }
 }
 
 void messageLoop()
