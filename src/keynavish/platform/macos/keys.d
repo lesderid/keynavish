@@ -37,6 +37,7 @@ private extern (C) nothrow
     extern __gshared CFStringRef kTISPropertyUnicodeKeyLayoutData;
 
     const(ubyte)* CFDataGetBytePtr(CFDataRef data);
+    long CFDataGetLength(CFDataRef data);
 
     uint LMGetKbdType();
 
@@ -137,14 +138,14 @@ void buildLayoutMap()
     // such as Japanese, Chinese or Korean report none. Falling back to the
     // ASCII-capable layout matters: without it every character binding fails to
     // resolve and startup raises an "Unknown key" alert for each one.
-    auto layout = currentKeyboardLayout();
+    auto layout = currentKeyboardLayoutData();
     if (layout is null) return;
 
     // 0x00..0x7F covers every key the layout can produce a character for.
     foreach (KeyCode keyCode; 0 .. 0x80)
     {
-        auto unshifted = translateKeyCode(layout, keyCode, false);
-        auto shifted = translateKeyCode(layout, keyCode, true);
+        auto unshifted = translateKeyCode(layout.ptr, keyCode, false);
+        auto shifted = translateKeyCode(layout.ptr, keyCode, true);
 
         if (unshifted != dchar.init)
         {
@@ -160,17 +161,18 @@ void buildLayoutMap()
     }
 }
 
-/// Byte pointer to the active Unicode key layout, falling back to the
-/// ASCII-capable layout when the selected input source has none.
+/// A copy of the active Unicode key layout, falling back to the ASCII-capable
+/// layout when the selected input source has none (input methods such as
+/// Japanese, Chinese and Korean report no layout data).
 ///
-/// The returned pointer is owned by the input source, which is released before
-/// returning -- but CFData's bytes remain valid because the layout object is
-/// cached by the system for the lifetime of the input source. The data is only
-/// read synchronously by buildLayoutMap, which is rebuilt on every layout
-/// change anyway.
-private const(ubyte)* currentKeyboardLayout()
+/// The bytes are copied rather than referenced. TISGetInputSourceProperty
+/// follows the Core Foundation "get rule", so the returned CFData is owned by
+/// the input source and is not retained on our behalf; keeping a pointer into it
+/// past the CFRelease below would be a use-after-free, and UCKeyTranslate reads
+/// that memory on every one of the 256 translations buildLayoutMap performs.
+private ubyte[] currentKeyboardLayoutData()
 {
-    static const(ubyte)* layoutFrom(TISInputSourceRef source)
+    static ubyte[] layoutDataFrom(TISInputSourceRef source)
     {
         if (source is null) return null;
         scope (exit) CFRelease(source);
@@ -178,13 +180,18 @@ private const(ubyte)* currentKeyboardLayout()
         auto layoutData = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData);
         if (layoutData is null) return null;
 
-        return CFDataGetBytePtr(layoutData);
+        auto bytes = CFDataGetBytePtr(layoutData);
+        auto length = CFDataGetLength(layoutData);
+
+        if (bytes is null || length <= 0) return null;
+
+        return bytes[0 .. cast(size_t) length].dup;
     }
 
-    auto layout = layoutFrom(TISCopyCurrentKeyboardLayoutInputSource());
+    auto layout = layoutDataFrom(TISCopyCurrentKeyboardLayoutInputSource());
     if (layout !is null) return layout;
 
-    return layoutFrom(TISCopyCurrentASCIICapableKeyboardLayoutInputSource());
+    return layoutDataFrom(TISCopyCurrentASCIICapableKeyboardLayoutInputSource());
 }
 
 /// Handles a keyboard layout change: rebuild the character map, then re-resolve
