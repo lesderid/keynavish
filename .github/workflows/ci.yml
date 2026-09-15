@@ -46,8 +46,19 @@ jobs:
           run: ./tools/run-tests.sh
         - name: Build keynavish.app
           run: ./tools/build-macos.sh release
-        - name: Show bundle architectures
-          run: lipo -archs out/keynavish.app/Contents/MacOS/keynavish
+        # An assertion rather than a report: if x86_64 detection regresses,
+        # build-macos.sh falls back to arm64 only and would otherwise upload a
+        # silently half-universal artifact.
+        - name: Verify the bundle is universal
+          run: |
+            archs=$(lipo -archs out/keynavish.app/Contents/MacOS/keynavish)
+            echo "architectures: $archs"
+            for want in arm64 x86_64; do
+              case " $archs " in
+                *" $want "*) ;;
+                *) echo "::error::bundle is missing the $want slice"; exit 1 ;;
+              esac
+            done
         - name: Package bundle
           run: ditto -c -k --keepParent out/keynavish.app "keynavish-${{ github.sha }}-macos.zip"
         - name: Upload keynavish.app

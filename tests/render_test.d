@@ -164,10 +164,46 @@ void main()
 
     printf("\nlabel text\n");
 
-    // Text is drawn through a flipped text matrix; if that is wrong the glyphs
-    // render outside the label box, so check ink lands inside it.
     auto textSize = context.measureLabel("AA");
     check("label text measures non-zero", textSize.width > 0 && textSize.height > 0);
+
+    // The overlay view is flipped, so drawLabel has to flip the text matrix
+    // back. Measuring alone would not catch getting that wrong: the glyphs
+    // would still measure the same while rendering upside down, mirrored about
+    // the baseline and therefore ABOVE the requested y. So draw in isolation and
+    // assert where the ink actually lands.
+    pixels[] = 0;
+
+    enum textX = 100;
+    enum textY = 100;
+
+    context.drawLabel(textX, textY, "AA", gridNavTextColour);
+
+    int inkInside;
+    int inkOutside;
+
+    foreach (y; 0 .. testHeight)
+    {
+        foreach (x; 0 .. testWidth)
+        {
+            if (pixelAt(x, y).isBlank) continue;
+
+            if (x >= textX && x <= textX + textSize.width
+                && y >= textY && y <= textY + textSize.height)
+            {
+                inkInside++;
+            }
+            else
+            {
+                inkOutside++;
+            }
+        }
+    }
+
+    check("label text actually draws ink", inkInside > 0);
+
+    // Verified to fail when the text matrix flip in drawLabel is removed.
+    check("all label ink lands inside the label box", inkOutside == 0);
 
     printf("\n%s\n", failures == 0 ? "all checks passed".ptr : "FAILURES PRESENT".ptr);
 

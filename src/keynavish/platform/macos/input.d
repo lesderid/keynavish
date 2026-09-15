@@ -25,14 +25,15 @@ bool hasAccessibilityPermission()
     return AXIsProcessTrusted();
 }
 
-/// Shows the system's own "would like to control this computer" prompt.
-void requestAccessibilityPermission()
+/// Shows the system's own "would like to control this computer" prompt, and
+/// reports whether the process is already trusted.
+///
+/// This is what makes first run match what the README promises: creating an
+/// event tap while untrusted fails silently, so without an explicit prompt the
+/// user would only ever see a dimmed menu bar icon.
+bool requestAccessibilityPermission()
 {
-    // AXIsProcessTrustedWithOptions with kAXTrustedCheckOptionPrompt. Building
-    // the options dictionary needs CoreFoundation gymnastics for one boolean,
-    // so the unprompted check plus the shim's deep link covers the same ground;
-    // macOS also prompts on the first CGEventTapCreate attempt.
-    AXIsProcessTrusted();
+    return knv_request_accessibility_permission() != 0;
 }
 
 void openAccessibilitySettings()
@@ -66,6 +67,18 @@ private extern (C) CGEventRef tapCallback(CGEventTapProxy proxy, CGEventType typ
         if (eventTap !is null)
         {
             CGEventTapEnable(eventTap, true);
+
+            // Re-enabling fails when the tap is dead rather than merely
+            // throttled -- most often because Accessibility permission was
+            // revoked while running. Without this the app would sit there
+            // looking healthy while silently receiving nothing ever again.
+            //
+            // The teardown is deferred rather than done here: this callback is
+            // running on the tap's own port, which it must not destroy.
+            if (!CGEventTapIsEnabled(eventTap))
+            {
+                knv_dispatch_async(&recoverLostTap);
+            }
         }
         return event;
     }
@@ -95,13 +108,47 @@ private extern (C) CGEventRef tapCallback(CGEventTapProxy proxy, CGEventType typ
     return event;
 }
 
+/// Tears down a tap that can no longer be re-enabled and returns to waiting for
+/// permission, so the app recovers by itself once it is granted again.
+private extern (C) void recoverLostTap() nothrow
+{
+    try
+    {
+        debugLog("event tap could not be re-enabled; returning to permission polling");
+
+        uninstallKeyboardHook();
+        startPermissionPolling();
+        rebuildStatusMenu();
+    }
+    catch (Throwable)
+    {
+    }
+}
+
+private void uninstallKeyboardHook()
+{
+    if (eventTap is null) return;
+
+    CGEventTapEnable(eventTap, false);
+    CFRelease(eventTap);
+    eventTap = null;
+}
+
 /// Installs the event tap. Returns false when Accessibility permission has not
 /// been granted, in which case the caller should keep running and retry.
 bool installKeyboardHook()
 {
+    // A non-null handle is not the same as a working tap: a disabled one must be
+    // discarded and rebuilt, or this would report success for a tap that
+    // delivers nothing.
     if (eventTap !is null)
     {
-        return true;
+        if (CGEventTapIsEnabled(eventTap))
+        {
+            return true;
+        }
+
+        uninstallKeyboardHook();
     }
 
     auto mask = CGEventMaskBit(kCGEventKeyDown);

@@ -59,7 +59,7 @@ LRESULT lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 
 // Permission model has no Windows equivalent: the hook just works.
 bool hasAccessibilityPermission() { return true; }
-void requestAccessibilityPermission() {}
+bool requestAccessibilityPermission() { return true; }
 void openAccessibilitySettings() {}
 void startPermissionPolling() {}
 bool awaitingPermission() { return false; }

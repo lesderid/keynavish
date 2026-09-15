@@ -80,8 +80,24 @@ private extern (C) void menuCallback(int tag) nothrow
     {
         handleCommand(cast(MenuItem) tag);
     }
-    catch (Throwable)
+    catch (Throwable t)
     {
+        // Menu actions fail for ordinary reasons -- an unwritable config path, a
+        // restart that cannot spawn, malformed configuration on reload -- and
+        // swallowing that silently makes the menu look like it did nothing.
+        // The C boundary still has to stay nothrow, hence the nested guard.
+        try
+        {
+            import std.exception : assumeWontThrow;
+
+            auto message = t.message.assumeWontThrow.idup;
+
+            debugLog("menu action %d failed: %s", tag, message);
+            showError("Menu action failed: " ~ message);
+        }
+        catch (Throwable)
+        {
+        }
     }
 }
 

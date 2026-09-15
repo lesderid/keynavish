@@ -89,8 +89,14 @@ int runKeynavish(string[] args)
         }
         else
         {
+            // Ask macOS to show its own permission prompt. Creating the tap
+            // while untrusted fails silently, so without this a first run would
+            // give no indication beyond a dimmed menu bar icon.
+            auto trusted = requestAccessibilityPermission();
+
             debugLog("no keyboard hook yet (accessibility permission granted: %s); polling",
-                     hasAccessibilityPermission);
+                     trusted);
+
             startPermissionPolling();
             rebuildStatusMenu();
         }

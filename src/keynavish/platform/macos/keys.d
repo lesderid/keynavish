@@ -26,9 +26,12 @@ private extern (C) nothrow
     alias CFDataRef = void*;
     alias OSStatus = int;
     alias UniChar = ushort;
+    // MacTypes.h has `typedef unsigned long UniCharCount`, which is 64-bit on
+    // LP64 macOS (verified: sizeof(UniCharCount) == 8). It is not UInt32.
     alias UniCharCount = ulong;
 
     TISInputSourceRef TISCopyCurrentKeyboardLayoutInputSource();
+    TISInputSourceRef TISCopyCurrentASCIICapableKeyboardLayoutInputSource();
     void* TISGetInputSourceProperty(TISInputSourceRef inputSource, CFStringRef propertyKey);
 
     extern __gshared CFStringRef kTISPropertyUnicodeKeyLayoutData;
@@ -129,14 +132,12 @@ void buildLayoutMap()
 
     // Fetched once rather than per keycode: this runs 256 translations, and
     // copying the input source each time made startup needlessly slow.
-    auto source = TISCopyCurrentKeyboardLayoutInputSource();
-    if (source is null) return;
-    scope (exit) CFRelease(source);
-
-    auto layoutData = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData);
-    if (layoutData is null) return;
-
-    auto layout = CFDataGetBytePtr(layoutData);
+    //
+    // The current source can legitimately have no layout data -- input methods
+    // such as Japanese, Chinese or Korean report none. Falling back to the
+    // ASCII-capable layout matters: without it every character binding fails to
+    // resolve and startup raises an "Unknown key" alert for each one.
+    auto layout = currentKeyboardLayout();
     if (layout is null) return;
 
     // 0x00..0x7F covers every key the layout can produce a character for.
@@ -157,6 +158,33 @@ void buildLayoutMap()
             charToKeyCode[shifted] = keyCode;
         }
     }
+}
+
+/// Byte pointer to the active Unicode key layout, falling back to the
+/// ASCII-capable layout when the selected input source has none.
+///
+/// The returned pointer is owned by the input source, which is released before
+/// returning -- but CFData's bytes remain valid because the layout object is
+/// cached by the system for the lifetime of the input source. The data is only
+/// read synchronously by buildLayoutMap, which is rebuilt on every layout
+/// change anyway.
+private const(ubyte)* currentKeyboardLayout()
+{
+    static const(ubyte)* layoutFrom(TISInputSourceRef source)
+    {
+        if (source is null) return null;
+        scope (exit) CFRelease(source);
+
+        auto layoutData = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData);
+        if (layoutData is null) return null;
+
+        return CFDataGetBytePtr(layoutData);
+    }
+
+    auto layout = layoutFrom(TISCopyCurrentKeyboardLayoutInputSource());
+    if (layout !is null) return layout;
+
+    return layoutFrom(TISCopyCurrentASCIICapableKeyboardLayoutInputSource());
 }
 
 /// Handles a keyboard layout change: rebuild the character map, then re-resolve

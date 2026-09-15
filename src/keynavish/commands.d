@@ -332,7 +332,20 @@ void loadAllConfigs()
         loadConfig(path, true);
     }
 
-    loadRecordings();
+    version (Windows)
+    {
+        loadRecordings();
+    }
+    else
+    {
+        // Recordings are deferred on macOS (§6.3), so the files are not read at
+        // all. Parsing them anyway would be worse than useless: an existing
+        // ~/.keynav_macros written on Windows holds Windows keycodes that mean
+        // nothing here, and loadRecordings warns on duplicates -- so a shared
+        // macros file could raise alerts at startup for a feature that does
+        // nothing. That contradicts the promise that deferred commands are
+        // simply inert.
+    }
 }
 
 /// Drops every binding and rebuilds it from the defaults plus the config files.

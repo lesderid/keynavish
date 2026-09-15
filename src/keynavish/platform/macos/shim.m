@@ -533,6 +533,44 @@ const char *knv_home_directory(void)
 }
 
 // ---------------------------------------------------------------------------
+// Accessibility permission
+// ---------------------------------------------------------------------------
+
+#import <ApplicationServices/ApplicationServices.h>
+
+// Shows the system's own "wants to control this computer" prompt, and reports
+// whether the process is already trusted.
+//
+// Done here rather than in D because building the options dictionary needs
+// kAXTrustedCheckOptionPrompt and kCFBooleanTrue; a literal NSDictionary is far
+// less error-prone than the equivalent CoreFoundation calls.
+int knv_request_accessibility_permission(void)
+{
+    @autoreleasepool {
+        NSDictionary *options = @{ (__bridge id)kAXTrustedCheckOptionPrompt: @YES };
+        return AXIsProcessTrustedWithOptions((__bridge CFDictionaryRef)options) ? 1 : 0;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Deferred work
+// ---------------------------------------------------------------------------
+
+typedef void (*knv_async_callback)(void);
+
+// Runs a callback on the main queue after the current work finishes. Used to
+// tear down and rebuild the event tap from outside the tap's own callback,
+// which must not block or destroy the port it is running on.
+void knv_dispatch_async(knv_async_callback cb)
+{
+    if (!cb) return;
+
+    dispatch_async(dispatch_get_main_queue(), ^{
+        cb();
+    });
+}
+
+// ---------------------------------------------------------------------------
 // Timers
 // ---------------------------------------------------------------------------
 

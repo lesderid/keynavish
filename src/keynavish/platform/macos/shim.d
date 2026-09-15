@@ -68,6 +68,13 @@ const(char)* knv_resource_path();
 const(char)* knv_bundle_path();
 const(char)* knv_home_directory();
 
+// Accessibility permission: shows the system prompt, returns whether trusted.
+int knv_request_accessibility_permission();
+
+// Runs a callback on the main queue once the current work completes.
+alias AsyncCallback = extern (C) void function();
+void knv_dispatch_async(AsyncCallback cb);
+
 // Timers (used to poll for the Accessibility grant, §7.1)
 alias TimerCallback = extern (C) void function();
 void knv_schedule_timer(double intervalSeconds, TimerCallback cb);

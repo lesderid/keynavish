@@ -38,14 +38,32 @@ mkdir -p build out
 export DUB_HOME="${DUB_HOME:-$ROOT/build/dub-home}"
 mkdir -p "$DUB_HOME"
 
-# Does this LDC have an x86_64 runtime to link against?
-LDC_LIB_DIR=$(dirname "$(command -v ldc2)")/../lib
+# Can this LDC actually produce an x86_64 binary?
+#
+# Probed by compiling and linking a trivial program rather than by looking for
+# runtime libraries on disk: Homebrew's ldc keeps them in ../lib while the
+# official osx-universal release uses per-architecture lib-arm64 / lib-x86_64
+# directories, so any path-based check silently mis-detects one layout or the
+# other -- and mis-detecting here means quietly shipping a half-universal binary.
+can_build_x86_64() {
+	probe_dir=$(mktemp -d)
+	printf 'void main() {}\n' > "$probe_dir/probe.d"
+
+	if ldc2 -mtriple=x86_64-apple-macos13 \
+		-of="$probe_dir/probe" "$probe_dir/probe.d" >/dev/null 2>&1; then
+		rm -rf "$probe_dir"
+		return 0
+	fi
+
+	rm -rf "$probe_dir"
+	return 1
+}
+
 SLICES="arm64"
-if [ -f "$LDC_LIB_DIR/libdruntime-ldc.a" ] &&
-	lipo -archs "$LDC_LIB_DIR/libdruntime-ldc.a" 2>/dev/null | grep -q x86_64; then
+if can_build_x86_64; then
 	SLICES="arm64 x86_64"
 else
-	echo "note: this ldc has no x86_64 runtime; building arm64 only."
+	echo "note: this ldc cannot build x86_64; building arm64 only."
 	echo "      for a universal build, install the official ldc2-*-osx-universal release."
 fi
 
@@ -66,6 +84,7 @@ else
 	cp "$1" build/keynavish-final
 fi
 
-lipo -archs build/keynavish-final 2>/dev/null || true
+ARCHS=$(lipo -archs build/keynavish-final 2>/dev/null || echo unknown)
+echo "==> built architectures: $ARCHS"
 
 "$SCRIPT_DIR/make-bundle.sh" build/keynavish-final out

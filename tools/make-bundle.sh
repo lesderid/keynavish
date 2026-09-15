@@ -44,7 +44,10 @@ if [ -f "$ROOT/keynavrc" ]; then
 fi
 
 if [ -n "${KEYNAVISH_SIGN_IDENTITY:-}" ]; then
-	codesign --force --options runtime --timestamp \
+	# No explicit --timestamp: codesign already requests a secure timestamp for
+	# Developer ID identities, and forcing one breaks the self-signed identity
+	# recommended for development, which cannot use Apple's timestamp service.
+	codesign --force --options runtime \
 		--sign "$KEYNAVISH_SIGN_IDENTITY" "$APP"
 	echo "make-bundle: signed with $KEYNAVISH_SIGN_IDENTITY"
 else
