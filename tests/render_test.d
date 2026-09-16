@@ -7,7 +7,7 @@
 // splitGrid, the global-to-window coordinate translation, and the grid-nav
 // label placement.
 //
-// Build and run: tools/run-render-test.sh
+// Build and run: tools/run-tests.sh render
 //
 module render_test;
 

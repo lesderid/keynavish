@@ -7,7 +7,7 @@
 // all register, the repository's own keynavrc parses completely, and the
 // commands that macOS does not implement yet still load instead of erroring.
 //
-// Build and run: tools/run-config-test.sh
+// Build and run: tools/run-tests.sh config
 //
 module config_test;
 

@@ -621,11 +621,15 @@ static const char *copyToBuffer(NSString *value, char *buffer, size_t size)
     return buffer;
 }
 
-// Display name of the process holding secure input, or NULL.
-const char *knv_secure_input_app_name(void)
+// Display name for a pid, or NULL.
+//
+// Takes the pid rather than looking it up again: the caller reads the holder
+// once and resolves everything from that single observation, so the name, the
+// bundle id and the pid the menu later acts on cannot disagree if the holder
+// changes in between.
+const char *knv_app_name_for_pid(int pid)
 {
     @autoreleasepool {
-        int pid = knv_secure_input_pid();
         if (pid == 0) return NULL;
 
         NSRunningApplication *app =
@@ -635,12 +639,11 @@ const char *knv_secure_input_app_name(void)
     }
 }
 
-// Bundle identifier of the process holding secure input, or NULL. Used to give
-// app-specific instructions rather than generic ones.
-const char *knv_secure_input_bundle_id(void)
+// Bundle identifier for a pid, or NULL. Used to give app-specific instructions
+// rather than generic ones.
+const char *knv_bundle_id_for_pid(int pid)
 {
     @autoreleasepool {
-        int pid = knv_secure_input_pid();
         if (pid == 0) return NULL;
 
         NSRunningApplication *app =

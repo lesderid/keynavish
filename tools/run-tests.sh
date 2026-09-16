@@ -28,7 +28,8 @@ Darwin)
 		-L-framework -LCocoa
 		-L-framework -LServiceManagement
 		-L-framework -LApplicationServices
-		-L-framework -LCarbon"
+		-L-framework -LCarbon
+		-L-framework -LIOKit"
 	;;
 *)
 	EXTRA=""

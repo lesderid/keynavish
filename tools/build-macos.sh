@@ -45,11 +45,11 @@ mkdir -p "$DUB_HOME"
 # official osx-universal release uses per-architecture lib-arm64 / lib-x86_64
 # directories, so any path-based check silently mis-detects one layout or the
 # other -- and mis-detecting here means quietly shipping a half-universal binary.
-can_build_x86_64() {
+can_build_arch() {
 	probe_dir=$(mktemp -d)
 	printf 'void main() {}\n' > "$probe_dir/probe.d"
 
-	if ldc2 -mtriple=x86_64-apple-macos13 \
+	if ldc2 -mtriple="$1-apple-macos13" \
 		-of="$probe_dir/probe" "$probe_dir/probe.d" >/dev/null 2>&1; then
 		rm -rf "$probe_dir"
 		return 0
@@ -59,13 +59,29 @@ can_build_x86_64() {
 	return 1
 }
 
-SLICES="arm64"
-if can_build_x86_64; then
-	SLICES="arm64 x86_64"
-else
-	echo "note: this ldc cannot build x86_64; building arm64 only."
-	echo "      for a universal build, install the official ldc2-*-osx-universal release."
+# Both slices are probed rather than assuming the host one works: an Intel Mac
+# with a host-only LDC can build x86_64 and not arm64, and assuming arm64 would
+# fail the build instead of producing the perfectly good x86_64 app.
+SLICES=""
+for arch in arm64 x86_64; do
+	if can_build_arch "$arch"; then
+		SLICES="$SLICES $arch"
+	fi
+done
+
+if [ -z "$SLICES" ]; then
+	echo "error: this ldc can build neither arm64 nor x86_64 for macOS 13." >&2
+	echo "       install the official ldc2-*-osx-universal release." >&2
+	exit 1
 fi
+
+case "$SLICES" in
+*arm64*x86_64*) ;;
+*)
+	echo "note: this ldc can only build:$SLICES"
+	echo "      for a universal build, install the official ldc2-*-osx-universal release."
+	;;
+esac
 
 BUILT=""
 for arch in $SLICES; do

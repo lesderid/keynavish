@@ -16,6 +16,11 @@ import keynavish.platform.macos.keys;
 //
 
 private CFMachPortRef eventTap;
+
+/// Kept so the source can be removed from the run loop on teardown. Releasing
+/// only the tap leaves the run loop holding a source for a dead port, and every
+/// recovery would strand another one.
+private CFRunLoopSourceRef eventTapSource;
 private bool permissionPollActive;
 
 // Carbon: reports whether some application has secure keyboard entry enabled.
@@ -67,9 +72,12 @@ SecureInputBlocker secureInputBlocker()
         return value is null ? null : value[0 .. strlen(value)].idup;
     }
 
-    blocker.appName = fromC(knv_secure_input_app_name());
+    // Everything is resolved from the single pid read above rather than by
+    // asking the shim again: re-querying could name one app while the pid the
+    // menu later acts on belongs to another, if the holder changed in between.
+    blocker.appName = fromC(knv_app_name_for_pid(blocker.pid));
 
-    blocker.instruction = secureInputInstruction(fromC(knv_secure_input_bundle_id()),
+    blocker.instruction = secureInputInstruction(fromC(knv_bundle_id_for_pid(blocker.pid)),
                                                  blocker.appName);
 
     return blocker;
@@ -228,6 +236,17 @@ private void uninstallKeyboardHook()
     if (eventTap is null) return;
 
     CGEventTapEnable(eventTap, false);
+
+    if (eventTapSource !is null)
+    {
+        CFRunLoopRemoveSource(CFRunLoopGetMain(), eventTapSource, kCFRunLoopCommonModes);
+        CFRelease(eventTapSource);
+        eventTapSource = null;
+    }
+
+    // Invalidated before release so the port is actually torn down rather than
+    // lingering until the last internal reference happens to go.
+    CFMachPortInvalidate(eventTap);
     CFRelease(eventTap);
     eventTap = null;
 }
@@ -263,16 +282,18 @@ bool installKeyboardHook()
         return false;
     }
 
-    auto source = CFMachPortCreateRunLoopSource(null, eventTap, 0);
-    if (source is null)
+    eventTapSource = CFMachPortCreateRunLoopSource(null, eventTap, 0);
+    if (eventTapSource is null)
     {
+        CFMachPortInvalidate(eventTap);
         CFRelease(eventTap);
         eventTap = null;
         return false;
     }
 
-    CFRunLoopAddSource(CFRunLoopGetMain(), source, kCFRunLoopCommonModes);
-    CFRelease(source);
+    // The reference is retained rather than released here, so uninstall can
+    // remove this exact source from the run loop again.
+    CFRunLoopAddSource(CFRunLoopGetMain(), eventTapSource, kCFRunLoopCommonModes);
 
     CGEventTapEnable(eventTap, true);
 

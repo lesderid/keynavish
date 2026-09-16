@@ -8,7 +8,7 @@
 //
 // Needs no Accessibility permission -- UCKeyTranslate is unprivileged.
 //
-// Build and run: tools/run-keys-test.sh
+// Build and run: tools/run-tests.sh keys
 //
 module keys_test;
 

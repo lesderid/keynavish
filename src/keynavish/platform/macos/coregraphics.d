@@ -28,6 +28,8 @@ CFTypeRef CFRetain(CFTypeRef cf);
 CFRunLoopRef CFRunLoopGetMain();
 CFRunLoopRef CFRunLoopGetCurrent();
 void CFRunLoopAddSource(CFRunLoopRef rl, CFRunLoopSourceRef source, CFStringRef mode);
+void CFRunLoopRemoveSource(CFRunLoopRef rl, CFRunLoopSourceRef source, CFStringRef mode);
+void CFMachPortInvalidate(CFMachPortRef port);
 CFRunLoopSourceRef CFMachPortCreateRunLoopSource(CFAllocatorRef allocator, CFMachPortRef port, CFIndex order);
 
 extern __gshared CFStringRef kCFRunLoopCommonModes;
