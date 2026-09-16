@@ -549,6 +549,10 @@ private void setDelay(string delayString)
 
 void processCommands(string[][] commands)
 {
+    // A warp is only allowed to steer the clicks in its own sequence, so a
+    // later bare `click` still uses the live cursor position.
+    resetPendingWarp();
+
     foreach (command; commands)
     {
         processCommand(command);

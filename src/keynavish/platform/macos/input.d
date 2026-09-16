@@ -360,6 +360,41 @@ bool awaitingPermission()
 
 private Nullable!int draggingButton;
 
+/// Where the last warp in this command sequence sent the cursor.
+///
+/// A click following a warp must land exactly where the warp aimed, not where
+/// the window server happens to report the cursor a moment later. Posting a
+/// mouse-moved event and then immediately asking for the cursor position is a
+/// round trip that races the move: the read can still return the pre-warp
+/// location, so the click is posted somewhere else entirely and only the
+/// *second* click lands on the target.
+///
+/// Consumed once and cleared at the start of every command sequence, so it can
+/// never be applied to a later, unrelated `click` after the user has moved the
+/// physical mouse.
+private Nullable!Point pendingWarpPosition;
+
+/// Clears any warp recorded by a previous command sequence. Called before each
+/// sequence runs.
+void resetPendingWarp()
+{
+    pendingWarpPosition.nullify();
+}
+
+/// Position a click should be posted at: the pending warp target if this
+/// sequence performed one, otherwise wherever the cursor actually is.
+private Point clickPosition()
+{
+    if (!pendingWarpPosition.isNull)
+    {
+        auto position = pendingWarpPosition.get();
+        pendingWarpPosition.nullify();
+        return position;
+    }
+
+    return cursorPosition;
+}
+
 private CGMouseButton cgButton(int button)
 {
     switch (button)
@@ -427,6 +462,8 @@ void warpCursor(Point position)
         : draggedEventType(draggingButton.get());
 
     postMouseEvent(type, position, draggingButton.isNull ? 1 : draggingButton.get());
+
+    pendingWarpPosition = position;
 }
 
 void mouseClick(int button, long delayMilliseconds)
@@ -440,7 +477,7 @@ void mouseClick(int button, long delayMilliseconds)
         return;
     }
 
-    auto position = cursorPosition;
+    auto position = clickPosition();
 
     postMouseEvent(downEventType(button), position, button, 1);
 
@@ -457,7 +494,7 @@ void mouseDoubleClick(int button, long delayMilliseconds)
     import core.thread.osthread : Thread;
     import core.time : dur;
 
-    auto position = cursorPosition;
+    auto position = clickPosition();
 
     foreach (clickState; 1 .. 3)
     {
@@ -484,7 +521,7 @@ void scrollWheel(int lines)
 /// Toggles a drag on or off, matching the Windows `drag` command's behaviour.
 void mouseDragToggle(int button, BitFlags!ModifierKey modifiers)
 {
-    auto position = cursorPosition;
+    auto position = clickPosition();
 
     if (draggingButton.isNull)
     {

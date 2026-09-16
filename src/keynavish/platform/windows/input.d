@@ -57,6 +57,10 @@ LRESULT lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
     return CallNextHookEx(null, nCode, wParam, lParam);
 }
 
+// SendInput applies the move before the click is queued, so Windows has no
+// warp/click race to guard against.
+void resetPendingWarp() {}
+
 // Windows has no equivalent of macOS secure event input.
 bool keyboardInputBlocked() { return false; }
 
