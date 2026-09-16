@@ -91,11 +91,19 @@ int runKeynavish(string[] args)
             // while another app holds secure input, macOS delivers key events to
             // no tap at all and keynavish looks dead for reasons that have
             // nothing to do with keynavish.
-            if (keyboardInputBlocked)
+            version (OSX)
             {
-                debugLog("WARNING: another app has secure input enabled, so no "
-                         ~ "key events will be delivered until it is turned off "
-                         ~ "(most often Terminal's Secure Keyboard Entry)");
+                auto blocker = secureInputBlocker();
+                if (blocker.active)
+                {
+                    debugLog("WARNING: no key events will be delivered: %s (pid %d) "
+                             ~ "has secure input enabled. %s",
+                             blocker.appName.length > 0 ? blocker.appName : "another app",
+                             blocker.pid,
+                             blocker.instruction.length > 0
+                                 ? blocker.instruction
+                                 : "Turn off secure keyboard entry in that app.");
+                }
             }
         }
         else

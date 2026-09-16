@@ -130,6 +130,30 @@ void main()
     check("keynavrc has content", lines > 0);
     check("every keynavrc line registers", registered == lines);
 
+    version (OSX)
+    {
+        printf("\nsecure input guidance\n");
+
+        // The instruction has to name the app's own menu, since that is the only
+        // place the setting lives -- keynavish and System Settings both have
+        // nothing to offer here.
+        import keynavish.platform.macos.input : secureInputInstruction;
+
+        check("Terminal gets its own menu path",
+              secureInputInstruction("com.apple.Terminal", "Terminal")
+              == "Turn off Terminal ▸ Secure Keyboard Entry");
+        check("iTerm2 gets its own menu path",
+              secureInputInstruction("com.googlecode.iterm2", "iTerm2")
+              == "Turn off iTerm2 ▸ Secure Keyboard Entry");
+        check("an unknown app still gets named advice",
+              secureInputInstruction("com.example.editor", "Some Editor")
+              == "Turn off secure keyboard entry in Some Editor");
+        check("an unidentifiable app yields no false instruction",
+              secureInputInstruction("com.example.editor", "") is null);
+        check("no bundle id and no name yields nothing",
+              secureInputInstruction("", "") is null);
+    }
+
     printf("\npath expansion\n");
 
     auto expanded = "~/.keynavrc".expandPath;

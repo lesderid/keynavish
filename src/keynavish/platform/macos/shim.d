@@ -73,6 +73,12 @@ const(char)* knv_resource_path();
 const(char)* knv_bundle_path();
 const(char)* knv_home_directory();
 
+// Secure input: which process is holding it, if any (§11).
+int knv_secure_input_pid();
+const(char)* knv_secure_input_app_name();
+const(char)* knv_secure_input_bundle_id();
+void knv_activate_app_with_pid(int pid);
+
 // Accessibility permission: shows the system prompt, returns whether trusted.
 int knv_request_accessibility_permission();
 

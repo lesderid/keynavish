@@ -37,6 +37,76 @@ bool keyboardInputBlocked()
     return IsSecureEventInputEnabled();
 }
 
+/// Describes what is blocking keyboard input and, where possible, exactly how to
+/// turn it off. Empty when nothing is blocking.
+///
+/// Naming the application matters more than it sounds: the setting lives in the
+/// offending app's own menu, not anywhere in keynavish or System Settings, so a
+/// generic "secure input is enabled" message leaves the user with nowhere to go.
+struct SecureInputBlocker
+{
+    bool active;
+    int pid;
+    string appName;      /// Empty when the process could not be identified.
+    string instruction;  /// Empty when there is no app-specific advice.
+}
+
+SecureInputBlocker secureInputBlocker()
+{
+    import core.stdc.string : strlen;
+
+    SecureInputBlocker blocker;
+
+    if (!IsSecureEventInputEnabled()) return blocker;
+
+    blocker.active = true;
+    blocker.pid = knv_secure_input_pid();
+
+    static string fromC(const(char)* value)
+    {
+        return value is null ? null : value[0 .. strlen(value)].idup;
+    }
+
+    blocker.appName = fromC(knv_secure_input_app_name());
+
+    blocker.instruction = secureInputInstruction(fromC(knv_secure_input_bundle_id()),
+                                                 blocker.appName);
+
+    return blocker;
+}
+
+/// How to turn off secure keyboard entry in the application holding it.
+///
+/// Split out from the lookup above so it can be tested without a process
+/// actually having to hold secure input.
+string secureInputInstruction(string bundleId, string appName)
+{
+    // The two apps that account for nearly every real case, and whose menu paths
+    // differ from each other.
+    switch (bundleId)
+    {
+        case "com.apple.Terminal":
+            return "Turn off Terminal ▸ Secure Keyboard Entry";
+        case "com.googlecode.iterm2":
+            return "Turn off iTerm2 ▸ Secure Keyboard Entry";
+        default:
+            break;
+    }
+
+    if (appName.length > 0)
+    {
+        return "Turn off secure keyboard entry in " ~ appName;
+    }
+
+    return null;
+}
+
+/// Brings the blocking application to the front so its menu is reachable.
+void activateSecureInputBlocker(int pid)
+{
+    if (pid != 0) knv_activate_app_with_pid(pid);
+}
+
 // --- Accessibility permission ----------------------------------------------
 
 bool hasAccessibilityPermission()

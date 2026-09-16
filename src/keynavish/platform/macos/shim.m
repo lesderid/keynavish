@@ -551,6 +551,118 @@ const char *knv_home_directory(void)
 }
 
 // ---------------------------------------------------------------------------
+// Secure input
+// ---------------------------------------------------------------------------
+
+#import <IOKit/IOKitLib.h>
+
+// PID that the window server attributes secure input to, or 0 if none.
+//
+// While any process holds secure input, macOS delivers key events to no event
+// tap at all, so keynavish looks broken for reasons that have nothing to do with
+// keynavish. Knowing WHICH app lets the UI say where the setting lives, which is
+// the difference between actionable advice and a shrug.
+//
+// The console-user dictionary is the only public place this is exposed;
+// IsSecureEventInputEnabled() answers whether, but not who.
+//
+// CAVEAT, measured rather than assumed: this is what the window server
+// attributes, which is not always the literal holder. A GUI app holding it is
+// reported correctly (verified with Terminal), but when a non-GUI process calls
+// EnableSecureEventInput() directly the registry named an unrelated foreground
+// app instead. So the UI treats this as a strong hint, and never states that
+// the named app is definitively the only cause.
+int knv_secure_input_pid(void)
+{
+    @autoreleasepool {
+        // Searched recursively from the root rather than read from a fixed
+        // path: IOConsoleUsers hangs off a service whose location is not
+        // guaranteed, and a hardcoded path silently finds nothing.
+        io_registry_entry_t root = IORegistryGetRootEntry(kIOMainPortDefault);
+        if (root == MACH_PORT_NULL) return 0;
+
+        CFTypeRef users = IORegistryEntrySearchCFProperty(root, kIOServicePlane,
+                                                          CFSTR("IOConsoleUsers"),
+                                                          kCFAllocatorDefault,
+                                                          kIORegistryIterateRecursively);
+        IOObjectRelease(root);
+        if (!users) return 0;
+
+        int pid = 0;
+
+        if (CFGetTypeID(users) == CFArrayGetTypeID())
+        {
+            for (NSDictionary *session in (__bridge NSArray *)users)
+            {
+                if (![session isKindOfClass:[NSDictionary class]]) continue;
+
+                NSNumber *holder = session[@"kCGSSessionSecureInputPID"];
+                if (holder)
+                {
+                    pid = holder.intValue;
+                    break;
+                }
+            }
+        }
+
+        CFRelease(users);
+
+        return pid;
+    }
+}
+
+static char g_secure_app_name[256];
+static char g_secure_bundle_id[256];
+
+static const char *copyToBuffer(NSString *value, char *buffer, size_t size)
+{
+    if (!value) return NULL;
+    if (![value getCString:buffer maxLength:size encoding:NSUTF8StringEncoding]) return NULL;
+    return buffer;
+}
+
+// Display name of the process holding secure input, or NULL.
+const char *knv_secure_input_app_name(void)
+{
+    @autoreleasepool {
+        int pid = knv_secure_input_pid();
+        if (pid == 0) return NULL;
+
+        NSRunningApplication *app =
+            [NSRunningApplication runningApplicationWithProcessIdentifier:pid];
+
+        return copyToBuffer(app.localizedName, g_secure_app_name, sizeof(g_secure_app_name));
+    }
+}
+
+// Bundle identifier of the process holding secure input, or NULL. Used to give
+// app-specific instructions rather than generic ones.
+const char *knv_secure_input_bundle_id(void)
+{
+    @autoreleasepool {
+        int pid = knv_secure_input_pid();
+        if (pid == 0) return NULL;
+
+        NSRunningApplication *app =
+            [NSRunningApplication runningApplicationWithProcessIdentifier:pid];
+
+        return copyToBuffer(app.bundleIdentifier, g_secure_bundle_id, sizeof(g_secure_bundle_id));
+    }
+}
+
+// Brings the offending application to the front, so the user can reach its menu
+// without hunting for it.
+void knv_activate_app_with_pid(int pid)
+{
+    @autoreleasepool {
+        NSRunningApplication *app =
+            [NSRunningApplication runningApplicationWithProcessIdentifier:pid];
+
+        [app activateWithOptions:NSApplicationActivateAllWindows];
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Accessibility permission
 // ---------------------------------------------------------------------------
 

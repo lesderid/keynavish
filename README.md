@@ -94,20 +94,27 @@ does:
 
 ### The hotkey does nothing
 
-Open the keynavish menu bar item. If it says **"Keyboard blocked by another
-app"**, another application has *secure input* enabled, and macOS is
+Open the keynavish menu bar item. If it says **"Keyboard blocked by secure
+input"**, another application has secure input enabled, and macOS is
 delivering key events to no observer at all -- not just keynavish. This is
 the mechanism that stops password fields being keylogged, and nothing
 keynavish can do will work around it.
 
-By far the most common cause is **Terminal's "Secure Keyboard Entry"**
-(Terminal menu -> Secure Keyboard Entry). Note that Terminal holds secure
-input for as long as it is running with that setting on -- not only while
-Terminal is focused -- so the symptom is that keynavish stops working
-everywhere. iTerm2 has the same setting, and password prompts hold it
-briefly.
+Where macOS identifies the application, the menu names it and tells you
+exactly where the setting is, for example *"Turn off Terminal -> Secure
+Keyboard Entry"*, along with an entry that brings that app to the front.
 
-To check from a shell:
+By far the most common cause is **Terminal's "Secure Keyboard Entry"**
+(Terminal menu -> Secure Keyboard Entry). Terminal holds secure input for as
+long as it is running with that setting on -- not only while Terminal is
+focused -- so the symptom is that keynavish stops working *everywhere*, which
+makes it look intermittent rather than related to the terminal. iTerm2 has the
+same setting, some editors and IDEs enable it around password fields, and
+password prompts hold it briefly.
+
+The app named in the menu is what macOS attributes secure input to. It is
+right for ordinary applications, but if turning it off there does not help,
+check the PID directly:
 
 ```
 ioreg -l -w 0 | grep -o 'kCGSSessionSecureInputPID"=[0-9]*'

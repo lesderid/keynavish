@@ -23,7 +23,12 @@ enum MenuItem
     Restart,
     Exit,
     GrantPermission,
+    RevealSecureInputApp,
 }
+
+/// PID of the app blocking keyboard input, captured when the menu was last
+/// built so the reveal action targets what the user actually saw.
+private int blockingAppPid;
 
 void addNotifyIcon()
 {
@@ -51,15 +56,33 @@ void rebuildStatusMenu()
 
     knv_menu_clear();
 
-    if (keyboardInputBlocked)
+    auto blocker = secureInputBlocker();
+    blockingAppPid = blocker.pid;
+
+    if (blocker.active)
     {
         // Another application has secure input enabled, so macOS delivers key
         // events to no event tap at all and keynavish appears simply dead.
-        // Nothing can be done about it from here, but saying so beats silence.
-        knv_menu_add_item("Keyboard blocked by another app".toStringz,
+        // keynavish cannot undo that, but it can say who did it and where the
+        // setting lives -- which is in that app's own menu, nowhere else.
+        // Phrased so the unconditional part is unambiguously true: secure input
+        // IS blocking. The app name follows as advice rather than as a verdict,
+        // because the window server's attribution is a hint, not a guarantee
+        // (see knv_secure_input_pid in shim.m).
+        knv_menu_add_item("Keyboard blocked by secure input".toStringz,
                           MenuItem.None, 0, 0);
-        knv_menu_add_item("(an app has Secure Keyboard Entry on)".toStringz,
-                          MenuItem.None, 0, 0);
+
+        if (blocker.instruction.length > 0)
+        {
+            knv_menu_add_item(blocker.instruction.toStringz, MenuItem.None, 0, 0);
+        }
+
+        if (blocker.pid != 0 && blocker.appName.length > 0)
+        {
+            knv_menu_add_item(format!"Bring %s to the front"(blocker.appName).toStringz,
+                              MenuItem.RevealSecureInputApp, 0, 1);
+        }
+
         knv_menu_add_separator();
     }
 
@@ -158,6 +181,9 @@ void handleCommand(MenuItem menuItem)
             break;
         case GrantPermission:
             openAccessibilitySettings();
+            break;
+        case RevealSecureInputApp:
+            activateSecureInputBlocker(blockingAppPid);
             break;
         case None:
             break;
