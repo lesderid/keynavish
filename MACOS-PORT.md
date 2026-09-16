@@ -835,9 +835,19 @@ that macOS doesn't implement yet (§1).
 To be recorded in the README, and as compatibility issues where they're
 user-visible:
 
-* **Secure Event Input.** While an app has secure input enabled (password fields,
-  some terminals), event taps receive nothing — keynavish will appear dead.
-  Unavoidable; document it.
+* **Secure Event Input.** While an app has secure input enabled, event taps
+  receive nothing and keynavish appears dead. Unavoidable, but it has to be
+  *surfaced*: the symptom is indistinguishable from keynavish being broken, and
+  it was in fact reported as a bug. The status menu now says so, and
+  `KEYNAVISH_DEBUG=1` warns at startup.
+
+  Confirmed empirically rather than assumed: a standalone `CGEventTap`, built
+  exactly the way keynavish builds its own, received zero key events while
+  secure input was held, and the same synthetic keystrokes arrived immediately
+  once it was released. Terminal's "Secure Keyboard Entry" holds it for as long
+  as Terminal is running, not only while focused, so the failure looks
+  intermittent and system-wide. `ioreg -l -w 0 | grep kCGSSessionSecureInputPID`
+  names the holding process.
 * **`record` and `playback` do nothing on macOS initially** (§6.3). Configs
   containing them still load and every other binding works; the two recording
   bindings are simply inert. When they land, one `~/.keynav_macros` will work
