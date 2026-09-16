@@ -369,9 +369,13 @@ private Nullable!int draggingButton;
 /// location, so the click is posted somewhere else entirely and only the
 /// *second* click lands on the target.
 ///
-/// Consumed once and cleared at the start of every command sequence, so it can
-/// never be applied to a later, unrelated `click` after the user has moved the
-/// physical mouse.
+/// Held for the whole command sequence, not consumed by the first action: a
+/// sequence can contain several mouse actions after one warp (`warp,click 1,
+/// click 1` is a common shape), and clearing it on first use would send every
+/// action after the first back through the racy read this exists to avoid.
+///
+/// Cleared at the start of every sequence instead, so it can never be applied to
+/// a later, unrelated `click` after the user has moved the physical mouse.
 private Nullable!Point pendingWarpPosition;
 
 /// Clears any warp recorded by a previous command sequence. Called before each
@@ -387,9 +391,7 @@ private Point clickPosition()
 {
     if (!pendingWarpPosition.isNull)
     {
-        auto position = pendingWarpPosition.get();
-        pendingWarpPosition.nullify();
-        return position;
+        return pendingWarpPosition.get();
     }
 
     return cursorPosition;
