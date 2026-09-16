@@ -57,6 +57,9 @@ LRESULT lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
     return CallNextHookEx(null, nCode, wParam, lParam);
 }
 
+// Windows has no equivalent of macOS secure event input.
+bool keyboardInputBlocked() { return false; }
+
 // Permission model has no Windows equivalent: the hook just works.
 bool hasAccessibilityPermission() { return true; }
 bool requestAccessibilityPermission() { return true; }

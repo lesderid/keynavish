@@ -212,3 +212,9 @@ void quitApplication()
 {
     PostQuitMessage(0);
 }
+
+/// Diagnostic parity with macOS, which creates one overlay window per display.
+int overlayWindowCount()
+{
+    return windowHandle is null ? 0 : 1;
+}

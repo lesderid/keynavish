@@ -86,6 +86,17 @@ int runKeynavish(string[] args)
         if (installKeyboardHook())
         {
             debugLog("keyboard hook installed");
+
+            // Installing successfully is not the same as receiving anything:
+            // while another app holds secure input, macOS delivers key events to
+            // no tap at all and keynavish looks dead for reasons that have
+            // nothing to do with keynavish.
+            if (keyboardInputBlocked)
+            {
+                debugLog("WARNING: another app has secure input enabled, so no "
+                         ~ "key events will be delivered until it is turned off "
+                         ~ "(most often Terminal's Secure Keyboard Entry)");
+            }
         }
         else
         {

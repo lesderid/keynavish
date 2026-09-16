@@ -40,10 +40,17 @@ private void start()
     }
 
     showWindow();
+
+    debugLog("start: grid %dx%d at (%d,%d)-(%d,%d), %d overlay window(s)",
+             grid.columns, grid.rows,
+             grid.rect.left, grid.rect.top, grid.rect.right, grid.rect.bottom,
+             overlayWindowCount);
 }
 
 private void end()
 {
+    debugLog("end");
+
     hideWindow();
 }
 

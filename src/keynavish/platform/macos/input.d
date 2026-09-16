@@ -18,6 +18,25 @@ import keynavish.platform.macos.keys;
 private CFMachPortRef eventTap;
 private bool permissionPollActive;
 
+// Carbon: reports whether some application has secure keyboard entry enabled.
+private extern (C) nothrow @nogc bool IsSecureEventInputEnabled();
+
+/// True when another application has secure input enabled, which stops macOS
+/// delivering key events to ANY event tap, keynavish included.
+///
+/// This is not a permission problem and not something keynavish can work around
+/// -- it is the mechanism that stops password fields being keylogged, and it
+/// applies system-wide for as long as the other app holds it. The most common
+/// cause by far is Terminal's "Secure Keyboard Entry" setting, which holds it
+/// for as long as Terminal is running, not only while Terminal is focused.
+///
+/// Worth surfacing because the symptom is otherwise indistinguishable from
+/// keynavish being broken: the hotkey simply does nothing, silently.
+bool keyboardInputBlocked()
+{
+    return IsSecureEventInputEnabled();
+}
+
 // --- Accessibility permission ----------------------------------------------
 
 bool hasAccessibilityPermission()
@@ -64,6 +83,15 @@ private extern (C) CGEventRef tapCallback(CGEventTapProxy proxy, CGEventType typ
     // happens under load. See MACOS-PORT.md §6.2.
     if (type == kCGEventTapDisabledByTimeout || type == kCGEventTapDisabledByUserInput)
     {
+        try
+        {
+            debugLog("event tap disabled by %s; re-enabling",
+                     type == kCGEventTapDisabledByTimeout ? "timeout" : "user input");
+        }
+        catch (Throwable)
+        {
+        }
+
         if (eventTap !is null)
         {
             CGEventTapEnable(eventTap, true);

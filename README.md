@@ -82,12 +82,53 @@ does:
 * `record` and `playback` are not implemented yet. Configs using them
   still load and everything else works; those bindings simply do nothing.
 * `Insert` has no macOS equivalent and maps to the Help key.
-* While an application has secure input enabled (password fields, some
-  terminals), macOS delivers no key events to any observer, so keynavish
-  will appear unresponsive until you leave that field.
+* While an application has secure input enabled, macOS delivers no key
+  events to any observer, so keynavish appears unresponsive. See
+  troubleshooting below -- this is the most common reason for keynavish
+  "doing nothing" on macOS.
 * The grid is drawn above everything, including full-screen apps -- and
   also above system alerts while it is visible. It never receives input,
   so this is cosmetic.
+
+## Troubleshooting (macOS)
+
+### The hotkey does nothing
+
+Open the keynavish menu bar item. If it says **"Keyboard blocked by another
+app"**, another application has *secure input* enabled, and macOS is
+delivering key events to no observer at all -- not just keynavish. This is
+the mechanism that stops password fields being keylogged, and nothing
+keynavish can do will work around it.
+
+By far the most common cause is **Terminal's "Secure Keyboard Entry"**
+(Terminal menu -> Secure Keyboard Entry). Note that Terminal holds secure
+input for as long as it is running with that setting on -- not only while
+Terminal is focused -- so the symptom is that keynavish stops working
+everywhere. iTerm2 has the same setting, and password prompts hold it
+briefly.
+
+To check from a shell:
+
+```
+ioreg -l -w 0 | grep -o 'kCGSSessionSecureInputPID"=[0-9]*'
+```
+
+If that prints a PID, `ps -p <pid> -o comm=` names the application holding it.
+
+If the menu instead says keynavish needs Accessibility permission, grant it
+in `System Settings -> Privacy & Security -> Accessibility`; keynavish starts
+working immediately, without a restart.
+
+### Anything else
+
+Run keynavish from a terminal with diagnostics enabled:
+
+```
+KEYNAVISH_DEBUG=1 /Applications/keynavish.app/Contents/MacOS/keynavish
+```
+
+It reports the configs it loaded, the displays it found, whether the keyboard
+hook installed, whether secure input is blocking it, and which bindings fire.
 
 ## Building
 

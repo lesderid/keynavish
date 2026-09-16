@@ -6,3 +6,4 @@
 /.dub/
 /src/keynavish/versioninfo.*
 /build/
+.DS_Store

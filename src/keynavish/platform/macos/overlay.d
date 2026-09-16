@@ -271,3 +271,10 @@ void quitApplication()
 
     knv_terminate();
 }
+
+/// Number of overlay windows currently created, for diagnostics: a nonzero
+/// `active` with zero windows means the grid is logically up but invisible.
+int overlayWindowCount()
+{
+    return knv_overlay_count();
+}

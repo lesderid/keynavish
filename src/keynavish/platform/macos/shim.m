@@ -115,7 +115,13 @@ void knv_set_layout_changed_callback(knv_layout_changed_callback cb)
 // Status item
 // ---------------------------------------------------------------------------
 
-@interface KnvMenuTarget : NSObject
+// Rebuild the menu just before it is shown, so anything time-varying in it is
+// current: whether another app is holding secure input, whether Accessibility
+// has been granted, and the launch-at-login checkbox.
+typedef void (*knv_menu_opening_callback)(void);
+static knv_menu_opening_callback g_menu_opening_callback;
+
+@interface KnvMenuTarget : NSObject <NSMenuDelegate>
 @end
 
 @implementation KnvMenuTarget
@@ -123,7 +129,18 @@ void knv_set_layout_changed_callback(knv_layout_changed_callback cb)
 {
     if (g_menu_callback) g_menu_callback((int)[(NSMenuItem *)sender tag]);
 }
+
+- (void)menuNeedsUpdate:(NSMenu *)menu
+{
+    (void)menu;
+    if (g_menu_opening_callback) g_menu_opening_callback();
+}
 @end
+
+void knv_set_menu_opening_callback(knv_menu_opening_callback cb)
+{
+    g_menu_opening_callback = cb;
+}
 
 static NSStatusItem  *g_status_item;
 static KnvMenuTarget *g_menu_target;
@@ -157,6 +174,7 @@ void knv_status_item_create(const char *symbol_name, const char *tooltip)
 
         g_menu = [[NSMenu alloc] init];
         [g_menu setAutoenablesItems:NO];
+        g_menu.delegate = g_menu_target;
         g_status_item.menu = g_menu;
     }
 }

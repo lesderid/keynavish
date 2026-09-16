@@ -28,6 +28,7 @@ enum MenuItem
 void addNotifyIcon()
 {
     knv_set_menu_callback(&menuCallback);
+    knv_set_menu_opening_callback(&menuOpeningCallback);
     knv_status_item_create(statusItemSymbolName.toStringz, "keynavish".toStringz);
 
     rebuildStatusMenu();
@@ -49,6 +50,18 @@ void rebuildStatusMenu()
     import std.format : format;
 
     knv_menu_clear();
+
+    if (keyboardInputBlocked)
+    {
+        // Another application has secure input enabled, so macOS delivers key
+        // events to no event tap at all and keynavish appears simply dead.
+        // Nothing can be done about it from here, but saying so beats silence.
+        knv_menu_add_item("Keyboard blocked by another app".toStringz,
+                          MenuItem.None, 0, 0);
+        knv_menu_add_item("(an app has Secure Keyboard Entry on)".toStringz,
+                          MenuItem.None, 0, 0);
+        knv_menu_add_separator();
+    }
 
     if (awaitingPermission)
     {
@@ -72,6 +85,20 @@ void rebuildStatusMenu()
     knv_menu_add_separator();
     knv_menu_add_item(format!"Restart %s"(programName).toStringz, MenuItem.Restart, 0, 1);
     knv_menu_add_item("Exit".toStringz, MenuItem.Exit, 0, 1);
+}
+
+private extern (C) void menuOpeningCallback() nothrow
+{
+    try
+    {
+        // The secure-input and launch-at-login states can both change while the
+        // app runs, so the menu is rebuilt each time it opens rather than only
+        // when keynavish itself changes something.
+        rebuildStatusMenu();
+    }
+    catch (Throwable)
+    {
+    }
 }
 
 private extern (C) void menuCallback(int tag) nothrow

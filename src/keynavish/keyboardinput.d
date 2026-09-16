@@ -276,6 +276,7 @@ bool handleKeyDown(KeyCode keyCode, BitFlags!ModifierKey modifiers)
         auto keyBindingRange = startKeyBindings.find!(b => b.keyCombination == pressedCombination);
         if (!keyBindingRange.empty)
         {
+            debugLog("start binding matched (keycode %d)", keyCode);
             processCommands(keyBindingRange[0].commands);
             return true;
         }
@@ -305,6 +306,13 @@ bool handleKeyDown(KeyCode keyCode, BitFlags!ModifierKey modifiers)
                 recordCommands(keyBindingRange[0].commands);
             }
             processCommands(keyBindingRange[0].commands);
+        }
+        else if (!isModifierKey(keyCode))
+        {
+            // Swallowed while the grid is up but matching nothing. If this fires
+            // for a key the user expected to work, the grid is active when they
+            // did not think it was.
+            debugLog("no binding for keycode %d while active; key swallowed", keyCode);
         }
     }
 

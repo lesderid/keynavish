@@ -49,6 +49,11 @@ void knv_menu_add_item(const(char)* title, int tag, int checked, int enabled);
 void knv_menu_add_separator();
 void knv_set_menu_callback(MenuCallback cb);
 
+/// Fires just before the status menu is displayed, so time-varying entries can
+/// be refreshed.
+alias MenuOpeningCallback = extern (C) void function();
+void knv_set_menu_opening_callback(MenuOpeningCallback cb);
+
 // Alerts (presented asynchronously on the main queue)
 void knv_alert_error(const(char)* message);
 void knv_alert_warning(const(char)* message);
