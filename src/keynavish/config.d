@@ -70,12 +70,17 @@ else
 
 enum configFilePaths = ["~/.keynavrc", "~/keynavrc", "~/.config/keynav/keynavrc"];
 
-enum unhandledExceptionMessage = "This is a bug, please report it at https://github.com/lesderid/keynavish/issues/new.";
+version (Windows)
+{
+    enum unhandledExceptionMessage = "This is a bug, please press Ctrl+C and report it at https://github.com/lesderid/keynavish/issues/new.";
+}
+else
+{
+    enum unhandledExceptionMessage = "This is a bug, please report it at https://github.com/lesderid/keynavish/issues/new.";
+}
 
 version (OSX)
 {
-    // SF Symbol used for the menu bar item. See MACOS-PORT.md §6.9.
+    // SF Symbol used for the menu bar item.
     enum statusItemSymbolName = "cursorarrow.rays";
-
-    enum bundleIdentifier = "net.lesderid.keynavish";
 }
