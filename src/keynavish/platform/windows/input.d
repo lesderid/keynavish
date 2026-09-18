@@ -10,10 +10,8 @@ import keynavish.types;
 import keynavish.platform.windows.display;
 
 //
-// Low-level keyboard hook and SendInput-based mouse synthesis. Moved from
-// keyboardinput.d and commands.d during the platform refactor; the decision
-// logic now lives in the shared handleKeyDown (§5.2b), so only event
-// translation remains here.
+// Low-level keyboard hook and SendInput-based mouse synthesis. The decision
+// logic lives in the shared handleKeyDown, so only event translation is here.
 //
 
 private DWORD draggingFlag;
@@ -60,9 +58,6 @@ LRESULT lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 // SendInput applies the move before the click is queued, so Windows has no
 // warp/click race to guard against.
 void resetPendingWarp() {}
-
-// Windows has no equivalent of macOS secure event input.
-bool keyboardInputBlocked() { return false; }
 
 // Permission model has no Windows equivalent: the hook just works.
 bool hasAccessibilityPermission() { return true; }
@@ -220,11 +215,6 @@ void mouseDragToggle(int button, BitFlags!ModifierKey modifiers)
     }
 
     draggingFlag = !draggingFlag ? mouseInput.mi.dwFlags : 0;
-}
-
-bool isDragging()
-{
-    return draggingFlag != 0;
 }
 
 // --- Focused window ---------------------------------------------------------

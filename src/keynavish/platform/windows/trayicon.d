@@ -211,6 +211,7 @@ void editConfigFile()
 
     ShellExecute(null, "open", path.toUTF16z, null, null, SW_SHOWNORMAL);
 }
+
 /// Parity stubs for the macOS permission flow, which has no Windows equivalent.
 void setStatusItemAttention(bool attention) {}
 

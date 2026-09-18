@@ -4,7 +4,7 @@
 // This is the highest-risk area for config compatibility: macOS keycodes are
 // positional while X11 keysyms and Windows virtual-key codes follow the
 // keyboard layout, so keynavish has to translate explicitly here or the same
-// keynavrc behaves differently across machines. See MACOS-PORT.md §6.3.
+// keynavrc behaves differently across machines.
 //
 // Needs no Accessibility permission -- UCKeyTranslate is unprivileged.
 //

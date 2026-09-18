@@ -7,12 +7,11 @@ import core.sys.windows.windows;
 import keynavish.types;
 
 //
-// Key-name resolution. Extracted verbatim from parseKeyCombination in
-// keyboardinput.d during the platform refactor; the mappings are unchanged.
+// Key-name resolution.
 //
 // Windows virtual-key codes already follow the active keyboard layout -- the
 // layout driver maps scancode to VK -- so no explicit translation step is
-// needed here, unlike on macOS. See MACOS-PORT.md §6.3.
+// needed here, unlike on macOS.
 //
 
 /// Resolves a keynav key name to a Windows virtual-key code.
@@ -101,7 +100,7 @@ bool isEscapeKey(KeyCode keyCode)
 }
 
 /// Modifier keys must never be swallowed, or the OS loses track of their state
-/// while the grid is up. Matches the original check in lowLevelKeyboardProc.
+/// while the grid is up.
 bool isModifierKey(KeyCode keyCode)
 {
     return (keyCode >= VK_LSHIFT && keyCode <= VK_RCONTROL)

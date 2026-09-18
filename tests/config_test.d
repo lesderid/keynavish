@@ -1,9 +1,8 @@
 //
 // Config and key-binding tests.
 //
-// The governing constraint for the macOS port is that one keynavrc works
-// unchanged across keynav, keynavish on Windows and keynavish on macOS
-// (MACOS-PORT.md §1). These tests check that directly: the stock keybindings
+// One keynavrc has to work unchanged across keynav, keynavish on Windows and
+// keynavish on macOS. These tests check that directly: the stock keybindings
 // all register, the repository's own keynavrc parses completely, and the
 // commands that macOS does not implement yet still load instead of erroring.
 //

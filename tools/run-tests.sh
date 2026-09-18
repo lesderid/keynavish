@@ -3,8 +3,7 @@
 # Builds and runs the test suites in tests/.
 #
 # They are kept out of the dub build because each has its own main(); dub would
-# link them into the application. None of them need Accessibility permission,
-# so they run unattended and in CI.
+# link them into the application. None of them need Accessibility permission.
 #
 # Usage: tools/run-tests.sh [test-name ...]   (default: all)
 #

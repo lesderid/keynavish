@@ -3,13 +3,8 @@
 # Type-checks the Windows build from any platform.
 #
 # LDC can run full semantic analysis for a Windows target without linking, which
-# needs no Windows SDK. That catches everything at the D level -- type errors,
-# missing or renamed symbols, bad signatures -- in code that would otherwise go
-# completely unchecked when developing on macOS.
-#
-# It does NOT link, so it cannot catch a missing Win32 import library symbol,
-# and it is obviously not a substitute for running the thing. But it turns
-# "nobody has compiled this" into "this compiles".
+# needs no Windows SDK. It does not link, so it cannot catch a missing Win32
+# import library symbol, and it is no substitute for running the thing.
 #
 # Usage: tools/check-windows.sh
 #

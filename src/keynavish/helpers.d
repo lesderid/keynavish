@@ -19,20 +19,6 @@ bool contains(Rect rect, Point point)
            point.y >= rect.top && point.y < rect.bottom;
 }
 
-/// Intersection of two rectangles, or an empty rectangle when they don't overlap.
-Rect intersect(Rect a, Rect b)
-{
-    import std.algorithm : max, min;
-
-    auto result = Rect(max(a.left, b.left), max(a.top, b.top),
-                       min(a.right, b.right), min(a.bottom, b.bottom));
-
-    if (result.right < result.left) result.right = result.left;
-    if (result.bottom < result.top) result.bottom = result.top;
-
-    return result;
-}
-
 bool isEmpty(Rect rect)
 {
     return rect.width <= 0 || rect.height <= 0;

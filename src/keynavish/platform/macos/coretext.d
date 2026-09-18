@@ -3,9 +3,7 @@ module keynavish.platform.macos.coretext;
 version (OSX):
 
 //
-// CoreGraphics drawing and CoreText bindings. Both are plain C APIs, so the
-// grid is drawn from D directly; only the window that owns the context comes
-// from the Objective-C shim.
+// CoreGraphics drawing and CoreText bindings.
 //
 
 import keynavish.platform.macos.coregraphics;

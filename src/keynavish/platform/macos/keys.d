@@ -10,12 +10,10 @@ import keynavish.platform.macos.coregraphics;
 // Key-name resolution.
 //
 // macOS virtual keycodes are positional -- they never change with the keyboard
-// layout. X11 keysyms and Windows virtual-key codes both DO follow the layout,
-// so a fixed kVK_* table would make keynavish behave differently here from
-// keynav and the Windows build on any non-QWERTY layout, from the same config
-// file. So character keys are resolved through the active layout with
-// UCKeyTranslate, which is essentially what XQuartz does to build an X keymap.
-// See MACOS-PORT.md §6.3.
+// layout. X11 keysyms and Windows virtual-key codes both do follow the layout,
+// so a fixed kVK_* table would make the same config file behave differently
+// here from keynav and the Windows build on any non-QWERTY layout. Character
+// keys are therefore resolved through the active layout with UCKeyTranslate.
 //
 
 // --- Carbon / HIToolbox bindings -------------------------------------------
@@ -27,7 +25,7 @@ private extern (C) nothrow
     alias OSStatus = int;
     alias UniChar = ushort;
     // MacTypes.h has `typedef unsigned long UniCharCount`, which is 64-bit on
-    // LP64 macOS (verified: sizeof(UniCharCount) == 8). It is not UInt32.
+    // LP64 macOS, not UInt32.
     alias UniCharCount = ulong;
 
     TISInputSourceRef TISCopyCurrentKeyboardLayoutInputSource();
@@ -131,13 +129,7 @@ void buildLayoutMap()
     keyCodeToChar = null;
     layoutMapBuilt = true;
 
-    // Fetched once rather than per keycode: this runs 256 translations, and
-    // copying the input source each time made startup needlessly slow.
-    //
-    // The current source can legitimately have no layout data -- input methods
-    // such as Japanese, Chinese or Korean report none. Falling back to the
-    // ASCII-capable layout matters: without it every character binding fails to
-    // resolve and startup raises an "Unknown key" alert for each one.
+    // Fetched once rather than per keycode: this runs 256 translations.
     auto layout = currentKeyboardLayoutData();
     if (layout is null) return;
 
@@ -163,13 +155,13 @@ void buildLayoutMap()
 
 /// A copy of the active Unicode key layout, falling back to the ASCII-capable
 /// layout when the selected input source has none (input methods such as
-/// Japanese, Chinese and Korean report no layout data).
+/// Japanese, Chinese and Korean report no layout data -- without the fallback
+/// every character binding would fail to resolve).
 ///
-/// The bytes are copied rather than referenced. TISGetInputSourceProperty
-/// follows the Core Foundation "get rule", so the returned CFData is owned by
-/// the input source and is not retained on our behalf; keeping a pointer into it
-/// past the CFRelease below would be a use-after-free, and UCKeyTranslate reads
-/// that memory on every one of the 256 translations buildLayoutMap performs.
+/// The bytes are copied rather than referenced: TISGetInputSourceProperty
+/// follows the Core Foundation "get rule", so the CFData is owned by the input
+/// source and keeping a pointer into it past the CFRelease below would be a
+/// use-after-free.
 private ubyte[] currentKeyboardLayoutData()
 {
     static ubyte[] layoutDataFrom(TISInputSourceRef source)
@@ -197,9 +189,8 @@ private ubyte[] currentKeyboardLayoutData()
 /// Handles a keyboard layout change: rebuild the character map, then re-resolve
 /// every binding against it.
 ///
-/// Rebuilding the map alone would not be enough -- bindings store resolved
-/// keycodes, so they would keep pointing at the previous layout's physical
-/// keys, which is exactly what layout-aware resolution exists to avoid (§6.3).
+/// Rebuilding the map alone would not be enough: bindings store resolved
+/// keycodes, so they would keep pointing at the previous layout's physical keys.
 void rebuildForLayoutChange()
 {
     import keynavish.commands : reloadAllKeyBindings;

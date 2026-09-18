@@ -9,16 +9,10 @@ import keynavish.platform.macos.shim;
 
 //
 // Display enumeration and cursor position, in the Quartz global display space:
-// origin at the top-left of the main display, Y growing downward. That matches
-// the Windows virtual-screen convention, so the grid arithmetic in commands.d
-// is shared unchanged. See MACOS-PORT.md §6.1.
+// origin at the top-left of the main display, Y growing downward.
 //
 // Everything here is in points, not pixels: Retina backing scale is handled by
 // AppKit at draw time and must not leak into the grid maths.
-//
-// Display enumeration goes through the shim (NSScreen) rather than
-// CGGetActiveDisplayList, which reports zero displays on macOS 26 -- see the
-// comment in shim.m. Cursor position still uses CoreGraphics, which works.
 //
 
 @property

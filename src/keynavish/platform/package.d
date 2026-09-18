@@ -1,15 +1,5 @@
 module keynavish.platform;
 
-//
-// Compile-time platform selection. No interfaces, no vtables, no runtime
-// dispatch: a missing or mistyped platform function is a compile error at the
-// call site. See MACOS-PORT.md §5.
-//
-// Only subsystems whose two implementations share no logic at all live in
-// separate modules like this. Everything else uses inline version blocks in the
-// shared module, which is the default.
-//
-
 version (Windows)
 {
     public import keynavish.platform.windows.display;

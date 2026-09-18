@@ -111,11 +111,10 @@ char[2] gridNavLabel(int row, int column)
 // The layout logic below is shared between platforms; only the four drawing
 // primitives it calls (strokeRectangles, fillRectangle, measureLabel,
 // drawLabel) are version-gated, in the platform overlay modules.
-// See MACOS-PORT.md §5.2b.
 //
 // `origin` is the top-left of the surface being painted, in global coordinates:
 // the virtual screen on Windows (one window spanning everything), or the
-// individual display on macOS (one window per display, §6.4).
+// individual display on macOS (one window per display).
 //
 void paintGrid(Canvas canvas, Point origin)
 {

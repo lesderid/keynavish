@@ -5,19 +5,13 @@
 #
 # Usage: tools/build-macos.sh [debug|release]
 #
-# NOTE ON UNIVERSAL BUILDS: cross-compiling to x86_64 needs x86_64 druntime and
-# phobos. Homebrew's ldc ships arm64-only runtime libraries, so it can only
-# produce an arm64 slice. For a universal build use the official LDC release,
-# which ships both:
-#
-#   https://github.com/ldc-developers/ldc/releases  (ldc2-*-osx-universal)
-#
-# This script detects what the installed toolchain can do and says so, rather
-# than failing with a wall of linker errors.
+# Universal builds need x86_64 druntime and phobos. Homebrew's ldc ships
+# arm64-only runtime libraries, so it can only produce an arm64 slice; use the
+# official ldc2-*-osx-universal release for both.
 #
 # Signing: set KEYNAVISH_SIGN_IDENTITY to a stable certificate. Without one the
 # bundle is ad-hoc signed, which runs but loses its Accessibility grant on every
-# rebuild -- see MACOS-PORT.md §7.2.
+# rebuild.
 #
 set -eu
 
@@ -38,13 +32,9 @@ mkdir -p build out
 export DUB_HOME="${DUB_HOME:-$ROOT/build/dub-home}"
 mkdir -p "$DUB_HOME"
 
-# Can this LDC actually produce an x86_64 binary?
-#
 # Probed by compiling and linking a trivial program rather than by looking for
-# runtime libraries on disk: Homebrew's ldc keeps them in ../lib while the
-# official osx-universal release uses per-architecture lib-arm64 / lib-x86_64
-# directories, so any path-based check silently mis-detects one layout or the
-# other -- and mis-detecting here means quietly shipping a half-universal binary.
+# runtime libraries on disk: the two LDC distributions lay them out differently,
+# so a path-based check silently mis-detects one or the other.
 can_build_arch() {
 	probe_dir=$(mktemp -d)
 	printf 'void main() {}\n' > "$probe_dir/probe.d"
@@ -59,9 +49,7 @@ can_build_arch() {
 	return 1
 }
 
-# Both slices are probed rather than assuming the host one works: an Intel Mac
-# with a host-only LDC can build x86_64 and not arm64, and assuming arm64 would
-# fail the build instead of producing the perfectly good x86_64 app.
+# Both slices are probed rather than assuming the host one works.
 SLICES=""
 for arch in arm64 x86_64; do
 	if can_build_arch "$arch"; then

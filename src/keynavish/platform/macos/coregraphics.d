@@ -3,9 +3,7 @@ module keynavish.platform.macos.coregraphics;
 version (OSX):
 
 //
-// Direct bindings to the CoreGraphics / CoreFoundation / ApplicationServices C
-// APIs. These need no Objective-C, so they are bound here rather than going
-// through the shim. See MACOS-PORT.md §5.5.
+// Bindings to the CoreGraphics / CoreFoundation / ApplicationServices C APIs.
 //
 
 extern (C):

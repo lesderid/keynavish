@@ -1,18 +1,13 @@
 module keynavish.types;
 
 //
-// Neutral geometry types.
-//
-// On Windows these are aliases for RECT and POINT rather than new structs, so
-// every existing Windows code path keeps its exact previous meaning -- including
-// the Win32 calls that take RECT*/POINT* by pointer. On macOS they are plain
-// structs with the same field layout.
-//
-// The convention is the Win32 one throughout keynavish: top-left origin, Y grows
+// Geometry in the Win32 convention throughout: top-left origin, Y grows
 // downward, coordinates in the virtual-screen (Windows) or global display
-// (macOS Quartz) space. Those two agree, which is why the grid arithmetic in
-// commands.d needs no conversion. AppKit's bottom-left origin is converted at
-// the window boundary only. See MACOS-PORT.md §6.1.
+// (macOS Quartz) space. AppKit's bottom-left origin is converted at the window
+// boundary only.
+//
+// On Windows these are aliases for RECT and POINT, so the Win32 calls that take
+// RECT*/POINT* by pointer keep working unchanged.
 //
 
 version (Windows)
@@ -37,8 +32,7 @@ else
 }
 
 /// A key identity as the platform reports it: a Windows virtual-key code, or a
-/// macOS CGKeyCode. Only ever compared against values produced by the same
-/// platform's key-name resolution.
+/// macOS CGKeyCode.
 version (Windows)
 {
     import core.sys.windows.windows : DWORD;

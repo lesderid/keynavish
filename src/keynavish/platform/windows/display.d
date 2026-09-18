@@ -4,15 +4,6 @@ version (Windows):
 
 import keynavish.types;
 
-//
-// Display enumeration and cursor position. Moved verbatim from grid.d during
-// the platform refactor; behaviour is unchanged.
-//
-// primaryDeviceResolution is deliberately gone: it existed only to normalise
-// coordinates for MOUSEEVENTF_ABSOLUTE, and warp() now sends absolute virtual
-// desktop coordinates instead. See MACOS-PORT.md §6.1.
-//
-
 @property
 Rect[] displayRectangles()
 {
@@ -66,7 +57,7 @@ Point cursorPosition()
 /// NOTE: this normalises against the primary display while the grid works in
 /// virtual-screen coordinates, so warping onto a secondary monitor lands in the
 /// wrong place on multi-monitor setups. That behaviour predates the macOS port
-/// and is preserved here deliberately -- see MACOS-PORT.md §14.
+/// and is preserved here deliberately.
 @property
 auto primaryDeviceResolution()
 {

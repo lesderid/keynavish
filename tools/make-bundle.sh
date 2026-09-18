@@ -5,11 +5,9 @@
 # Usage: tools/make-bundle.sh <path-to-executable> [output-dir]
 #
 # Signing: by default the bundle is signed ad-hoc, which is enough to run but
-# NOT enough to keep an Accessibility grant across rebuilds -- macOS ties the
-# grant to the code signature, and an ad-hoc signature changes every build, so
-# the permission silently stops applying while the checkbox still looks ticked.
-# Set KEYNAVISH_SIGN_IDENTITY to a stable certificate to avoid that.
-# See MACOS-PORT.md §7.2.
+# not enough to keep an Accessibility grant across rebuilds -- macOS ties the
+# grant to the code signature, and an ad-hoc signature changes every build. Set
+# KEYNAVISH_SIGN_IDENTITY to a stable certificate to avoid that.
 #
 set -eu
 
@@ -38,7 +36,6 @@ chmod +x "$APP/Contents/MacOS/keynavish"
 sed "s/@VERSION@/$PLIST_VERSION/g" "$ROOT/tools/Info.plist.in" > "$APP/Contents/Info.plist"
 
 # Bundled read-only default config, loaded before the ~ paths.
-# See MACOS-PORT.md §6.11 (option D).
 if [ -f "$ROOT/keynavrc" ]; then
 	cp "$ROOT/keynavrc" "$APP/Contents/Resources/keynavrc"
 fi

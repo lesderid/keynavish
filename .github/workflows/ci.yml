@@ -33,22 +33,14 @@ jobs:
           uses: actions/checkout@v4
           with:
             fetch-depth: 0
-        # The official LDC release ships both arm64 and x86_64 runtime
-        # libraries, which Homebrew's ldc does not -- needed for the universal
-        # build. See tools/build-macos.sh.
         - name: Install ldc and dub
           uses: dlang-community/setup-dlang@v1
           with:
             compiler: ldc-latest
-        # Also type-checks the Windows build, which catches Windows-side
-        # breakage without needing a Windows runner.
         - name: Run tests
           run: ./tools/run-tests.sh
         - name: Build keynavish.app
           run: ./tools/build-macos.sh release
-        # An assertion rather than a report: if x86_64 detection regresses,
-        # build-macos.sh falls back to arm64 only and would otherwise upload a
-        # silently half-universal artifact.
         - name: Verify the bundle is universal
           run: |
             archs=$(lipo -archs out/keynavish.app/Contents/MacOS/keynavish)
