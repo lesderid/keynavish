@@ -286,6 +286,14 @@ private extern (C) void permissionPollCallback() nothrow
         {
             knv_cancel_timer();
             permissionPollActive = false;
+
+            // The layout-change callback is only registered once the hook
+            // installs, so a layout switched while the user was in System
+            // Settings granting permission went unnoticed: the map is current
+            // again by now, but the bindings still hold the startup layout's
+            // keycodes.
+            reloadAllKeyBindings();
+
             setStatusItemAttention(false);
             rebuildStatusMenu();
         }

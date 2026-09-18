@@ -102,6 +102,17 @@ void main()
         checkResolves(name);
     }
 
+    // The punctuation names the Windows table also accepts, so one keynavrc
+    // resolves the same set on both platforms.
+    foreach (name; ["bracketright", "backslash", "slash", "grave", "apostrophe", "equal"])
+    {
+        checkResolves(name);
+    }
+
+    // Uppercase is not a key name: accepting it would resolve through the
+    // shifted layer and bind the unshifted key instead.
+    check("uppercase letter name is rejected", resolveKeyName("A").isNull);
+
     printf("\nround-tripping\n");
 
     // Grid-nav matches cells by letter, so keycode -> character has to invert

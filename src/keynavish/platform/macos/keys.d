@@ -93,14 +93,24 @@ private KeyCode[dchar] charToKeyCode;
 private dchar[KeyCode] keyCodeToChar;
 private bool layoutMapBuilt;
 
-/// Translates one keycode through a layout. `shifted` picks the shifted
-/// character (e.g. '@' rather than '2' on a US layout).
-private dchar translateKeyCode(const(ubyte)* layout, KeyCode keyCode, bool shifted)
+// UCKeyTranslate takes the Carbon modifier field shifted right by 8, so
+// shiftKey (1 << 9) is 1 << 1 and optionKey (1 << 11) is 1 << 3.
+private enum : uint
 {
-    // UCKeyTranslate takes the Carbon modifier field shifted right by 8;
-    // shiftKey is 1 << 9, so the shift state is 1 << 1.
-    uint modifierState = shifted ? 2 : 0;
+    unshiftedState   = 0,
+    shiftedState     = 1 << 1,
+    optionState      = 1 << 3,
+    shiftOptionState = shiftedState | optionState,
+}
 
+/// The layers scanned when building the character map, in priority order:
+/// the first layer that produces a character owns it.
+private immutable uint[4] layerStates =
+    [unshiftedState, shiftedState, optionState, shiftOptionState];
+
+/// Translates one keycode through a layout in one modifier state.
+private dchar translateKeyCode(const(ubyte)* layout, KeyCode keyCode, uint modifierState)
+{
     uint deadKeyState;
     UniChar[8] buffer;
     UniCharCount length;
@@ -134,22 +144,30 @@ void buildLayoutMap()
 
     layoutMapBuilt = true;
 
-    // 0x00..0x7F covers every key the layout can produce a character for.
-    foreach (KeyCode keyCode; 0 .. 0x80)
+    // Layer by layer rather than key by key, so a character reachable unshifted
+    // on one key always beats the same character behind Option on another.
+    //
+    // The Option layers are not optional decoration: on the French and several
+    // other stock macOS layouts, `@` and `[` are only reachable with Option, so
+    // without them `shift+at playback` and `ctrl+bracketleft end` -- both in the
+    // default bindings -- fail to resolve and alert on every startup.
+    foreach (state; layerStates)
     {
-        auto unshifted = translateKeyCode(layout.ptr, keyCode, false);
-        auto shifted = translateKeyCode(layout.ptr, keyCode, true);
-
-        if (unshifted != dchar.init)
+        // 0x00..0x7F covers every key the layout can produce a character for.
+        foreach (KeyCode keyCode; 0 .. 0x80)
         {
+            auto character = translateKeyCode(layout.ptr, keyCode, state);
+            if (character == dchar.init) continue;
+
             // First keycode wins, so the main row beats the keypad for digits.
-            if (unshifted !in charToKeyCode) charToKeyCode[unshifted] = keyCode;
-            if (keyCode !in keyCodeToChar) keyCodeToChar[keyCode] = unshifted;
-        }
+            if (character !in charToKeyCode) charToKeyCode[character] = keyCode;
 
-        if (shifted != dchar.init && shifted !in charToKeyCode)
-        {
-            charToKeyCode[shifted] = keyCode;
+            // Grid-nav matches cells by the letter printed on the key, so only
+            // the unshifted layer feeds the reverse map.
+            if (state == unshiftedState && keyCode !in keyCodeToChar)
+            {
+                keyCodeToChar[keyCode] = character;
+            }
         }
     }
 }
