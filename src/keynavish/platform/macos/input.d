@@ -12,42 +12,22 @@ import keynavish.platform.macos.keys;
 
 //
 // Global keyboard capture via CGEventTap, and mouse synthesis via CGEvent.
-// Replaces the Windows low-level keyboard hook and SendInput. See §6.2 and §6.6.
 //
 
 private CFMachPortRef eventTap;
 
 /// Kept so the source can be removed from the run loop on teardown. Releasing
-/// only the tap leaves the run loop holding a source for a dead port, and every
-/// recovery would strand another one.
+/// only the tap leaves the run loop holding a source for a dead port.
 private CFRunLoopSourceRef eventTapSource;
 private bool permissionPollActive;
 
 // Carbon: reports whether some application has secure keyboard entry enabled.
+// While it is, macOS delivers key events to no event tap at all, keynavish
+// included, and there is nothing keynavish can do about it but say so.
 private extern (C) nothrow @nogc bool IsSecureEventInputEnabled();
 
-/// True when another application has secure input enabled, which stops macOS
-/// delivering key events to ANY event tap, keynavish included.
-///
-/// This is not a permission problem and not something keynavish can work around
-/// -- it is the mechanism that stops password fields being keylogged, and it
-/// applies system-wide for as long as the other app holds it. The most common
-/// cause by far is Terminal's "Secure Keyboard Entry" setting, which holds it
-/// for as long as Terminal is running, not only while Terminal is focused.
-///
-/// Worth surfacing because the symptom is otherwise indistinguishable from
-/// keynavish being broken: the hotkey simply does nothing, silently.
-bool keyboardInputBlocked()
-{
-    return IsSecureEventInputEnabled();
-}
-
-/// Describes what is blocking keyboard input and, where possible, exactly how to
-/// turn it off. Empty when nothing is blocking.
-///
-/// Naming the application matters more than it sounds: the setting lives in the
-/// offending app's own menu, not anywhere in keynavish or System Settings, so a
-/// generic "secure input is enabled" message leaves the user with nowhere to go.
+/// Describes what is blocking keyboard input and, where possible, how to turn
+/// it off. Empty when nothing is blocking.
 struct SecureInputBlocker
 {
     bool active;
@@ -72,9 +52,8 @@ SecureInputBlocker secureInputBlocker()
         return value is null ? null : value[0 .. strlen(value)].idup;
     }
 
-    // Everything is resolved from the single pid read above rather than by
-    // asking the shim again: re-querying could name one app while the pid the
-    // menu later acts on belongs to another, if the holder changed in between.
+    // Everything is resolved from the single pid read above: re-querying could
+    // name one app while the pid the menu later acts on belongs to another.
     blocker.appName = fromC(knv_app_name_for_pid(blocker.pid));
 
     blocker.instruction = secureInputInstruction(fromC(knv_bundle_id_for_pid(blocker.pid)),
@@ -89,8 +68,6 @@ SecureInputBlocker secureInputBlocker()
 /// actually having to hold secure input.
 string secureInputInstruction(string bundleId, string appName)
 {
-    // The two apps that account for nearly every real case, and whose menu paths
-    // differ from each other.
     switch (bundleId)
     {
         case "com.apple.Terminal":
@@ -124,10 +101,6 @@ bool hasAccessibilityPermission()
 
 /// Shows the system's own "would like to control this computer" prompt, and
 /// reports whether the process is already trusted.
-///
-/// This is what makes first run match what the README promises: creating an
-/// event tap while untrusted fails silently, so without an explicit prompt the
-/// user would only ever see a dimmed menu bar icon.
 bool requestAccessibilityPermission()
 {
     return knv_request_accessibility_permission() != 0;
@@ -157,30 +130,17 @@ private extern (C) CGEventRef tapCallback(CGEventTapProxy proxy, CGEventType typ
                                           CGEventRef event, void* userInfo) nothrow
 {
     // The system disables a tap whose callback is too slow, and silently stops
-    // delivering events until it is re-enabled. This is not an edge case; it
-    // happens under load. See MACOS-PORT.md §6.2.
+    // delivering events until it is re-enabled. This happens under load.
     if (type == kCGEventTapDisabledByTimeout || type == kCGEventTapDisabledByUserInput)
     {
-        try
-        {
-            debugLog("event tap disabled by %s; re-enabling",
-                     type == kCGEventTapDisabledByTimeout ? "timeout" : "user input");
-        }
-        catch (Throwable)
-        {
-        }
-
         if (eventTap !is null)
         {
             CGEventTapEnable(eventTap, true);
 
             // Re-enabling fails when the tap is dead rather than merely
-            // throttled -- most often because Accessibility permission was
-            // revoked while running. Without this the app would sit there
-            // looking healthy while silently receiving nothing ever again.
-            //
-            // The teardown is deferred rather than done here: this callback is
-            // running on the tap's own port, which it must not destroy.
+            // throttled, most often because Accessibility permission was
+            // revoked while running. The teardown is deferred because this
+            // callback runs on the tap's own port, which it must not destroy.
             if (!CGEventTapIsEnabled(eventTap))
             {
                 knv_dispatch_async(&recoverLostTap);
@@ -220,8 +180,6 @@ private extern (C) void recoverLostTap() nothrow
 {
     try
     {
-        debugLog("event tap could not be re-enabled; returning to permission polling");
-
         uninstallKeyboardHook();
         startPermissionPolling();
         rebuildStatusMenu();
@@ -308,8 +266,6 @@ private extern (C) void layoutChangedCallback() nothrow
 {
     try
     {
-        debugLog("keyboard layout changed; re-resolving key bindings");
-
         rebuildForLayoutChange();
     }
     catch (Throwable)
@@ -340,7 +296,7 @@ private extern (C) void permissionPollCallback() nothrow
 }
 
 /// Starts polling for the Accessibility grant, so the app becomes functional
-/// the moment the user grants it without needing a restart (§7.1).
+/// the moment the user grants it without needing a restart.
 void startPermissionPolling()
 {
     if (permissionPollActive) return;
@@ -362,20 +318,11 @@ private Nullable!int draggingButton;
 
 /// Where the last warp in this command sequence sent the cursor.
 ///
-/// A click following a warp must land exactly where the warp aimed, not where
-/// the window server happens to report the cursor a moment later. Posting a
-/// mouse-moved event and then immediately asking for the cursor position is a
-/// round trip that races the move: the read can still return the pre-warp
-/// location, so the click is posted somewhere else entirely and only the
-/// *second* click lands on the target.
-///
-/// Held for the whole command sequence, not consumed by the first action: a
-/// sequence can contain several mouse actions after one warp (`warp,click 1,
-/// click 1` is a common shape), and clearing it on first use would send every
-/// action after the first back through the racy read this exists to avoid.
-///
-/// Cleared at the start of every sequence instead, so it can never be applied to
-/// a later, unrelated `click` after the user has moved the physical mouse.
+/// A click following a warp must land where the warp aimed: posting a
+/// mouse-moved event and then reading back the cursor position races the move,
+/// so the read can still return the pre-warp location. Held for the whole
+/// sequence (`warp,click 1,click 1` is a common shape) and cleared at the start
+/// of the next one, so it never applies to an unrelated later click.
 private Nullable!Point pendingWarpPosition;
 
 /// Clears any warp recorded by a previous command sequence. Called before each
@@ -448,7 +395,7 @@ private void postMouseEvent(CGEventType type, Point position, int button, int cl
     if (clickState > 0)
     {
         // macOS apps read clickState to recognise a double click; two plain
-        // click pairs are seen as two separate clicks. See §6.6.
+        // click pairs are seen as two separate clicks.
         CGEventSetIntegerValueField(event, kCGMouseEventClickState, clickState);
     }
 
@@ -535,8 +482,7 @@ void mouseDragToggle(int button, BitFlags!ModifierKey modifiers)
         auto held = draggingButton.get();
 
         // Modifiers are applied to the mouse event itself rather than
-        // synthesised as separate key presses, which is both simpler and less
-        // racy than the Windows approach. See §6.6.
+        // synthesised as separate key presses.
         auto event = CGEventCreateMouseEvent(null, upEventType(held),
                                              CGPoint(position.x, position.y),
                                              cgButton(held));
@@ -559,11 +505,6 @@ void mouseDragToggle(int button, BitFlags!ModifierKey modifiers)
     }
 }
 
-bool isDragging()
-{
-    return !draggingButton.isNull;
-}
-
 // --- Focused window ---------------------------------------------------------
 
 private CFStringRef cfString(string s)
@@ -575,8 +516,7 @@ private CFStringRef cfString(string s)
 
 /// Bounds of the focused window, for `windowzoom`. Uses the Accessibility API,
 /// which reports the actually-focused window rather than guessing from the
-/// on-screen window list. Needs no permission beyond the one the tap already
-/// requires. See §6.7.
+/// on-screen window list.
 Nullable!Rect focusedWindowRect()
 {
     import std.math : round;

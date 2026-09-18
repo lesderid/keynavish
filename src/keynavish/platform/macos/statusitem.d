@@ -51,7 +51,6 @@ void setStatusItemAttention(bool attention)
 
 void rebuildStatusMenu()
 {
-    import std.conv : to;
     import std.format : format;
 
     knv_menu_clear();
@@ -61,14 +60,10 @@ void rebuildStatusMenu()
 
     if (blocker.active)
     {
-        // Another application has secure input enabled, so macOS delivers key
-        // events to no event tap at all and keynavish appears simply dead.
-        // keynavish cannot undo that, but it can say who did it and where the
-        // setting lives -- which is in that app's own menu, nowhere else.
-        // Phrased so the unconditional part is unambiguously true: secure input
-        // IS blocking. The app name follows as advice rather than as a verdict,
-        // because the window server's attribution is a hint, not a guarantee
-        // (see knv_secure_input_pid in shim.m).
+        // Phrased so the unconditional part is unambiguously true: secure
+        // input IS blocking. The app name follows as advice rather than as a
+        // verdict, because the window server's attribution is a hint only (see
+        // knv_secure_input_pid in shim.m).
         knv_menu_add_item("Keyboard blocked by secure input".toStringz,
                           MenuItem.None, 0, 0);
 
@@ -88,8 +83,8 @@ void rebuildStatusMenu()
 
     if (awaitingPermission)
     {
-        // Until Accessibility is granted the app cannot see any keys, so say so
-        // where the user will actually look. See MACOS-PORT.md §7.1.
+        // Until Accessibility is granted the app cannot see any keys, so say
+        // so where the user will actually look.
         knv_menu_add_item("keynavish needs Accessibility permission".toStringz,
                           MenuItem.None, 0, 0);
         knv_menu_add_item("Open Privacy & Security settings…".toStringz,
@@ -132,18 +127,15 @@ private extern (C) void menuCallback(int tag) nothrow
     }
     catch (Throwable t)
     {
-        // Menu actions fail for ordinary reasons -- an unwritable config path, a
-        // restart that cannot spawn, malformed configuration on reload -- and
+        // Menu actions fail for ordinary reasons -- an unwritable config path,
+        // a restart that cannot spawn, malformed configuration on reload -- and
         // swallowing that silently makes the menu look like it did nothing.
         // The C boundary still has to stay nothrow, hence the nested guard.
         try
         {
             import std.exception : assumeWontThrow;
 
-            auto message = t.message.assumeWontThrow.idup;
-
-            debugLog("menu action %d failed: %s", tag, message);
-            showError("Menu action failed: " ~ message);
+            showError("Menu action failed: " ~ t.message.assumeWontThrow.idup);
         }
         catch (Throwable)
         {
@@ -215,7 +207,7 @@ void editConfigFile()
 
     // Only the ~ paths are offered for editing, never the read-only copy inside
     // the bundle: editing that would break the code signature and silently
-    // invalidate the Accessibility grant. See MACOS-PORT.md §6.11.
+    // invalidate the Accessibility grant.
     auto configFileRange = configFilePaths.map!expandPath.find!exists;
     if (configFileRange.empty)
     {

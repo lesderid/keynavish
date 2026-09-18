@@ -31,12 +31,9 @@ version (Windows)
 else
 {
     //
-    // NSAlert, presented asynchronously on the main queue by the shim.
-    //
-    // Showing a modal alert synchronously would be a correctness bug, not just a
-    // style one: several of these are reachable from inside the CGEventTap
-    // callback, and blocking the run loop there gets the tap disabled by
-    // timeout. See MACOS-PORT.md §6.12.
+    // NSAlert, presented asynchronously on the main queue by the shim: several
+    // of these are reachable from inside the CGEventTap callback, and blocking
+    // the run loop there gets the tap disabled by timeout.
     //
 
     private const(char)* cstring(Stringish)(Stringish message)
@@ -118,38 +115,5 @@ template exceptionHandlerWrapper(alias func)
                 assert(0);
             }
         }
-    }
-}
-
-//
-// Opt-in diagnostics, enabled with KEYNAVISH_DEBUG=1.
-//
-// keynavish runs as a background app with no console, so without this there is
-// no way for a user to tell whether it is waiting for permission, which config
-// files it loaded, or how many displays it found.
-//
-void debugLog(Args...)(string format, Args args)
-{
-    import std.stdio : stderr;
-    import std.process : environment;
-
-    static bool enabled;
-    static bool checked;
-
-    if (!checked)
-    {
-        enabled = environment.get("KEYNAVISH_DEBUG") == "1";
-        checked = true;
-    }
-
-    if (!enabled) return;
-
-    try
-    {
-        stderr.writefln("[keynavish] " ~ format, args);
-        stderr.flush();
-    }
-    catch (Exception)
-    {
     }
 }

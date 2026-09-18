@@ -55,9 +55,6 @@ int runKeynavish(string[] args)
 {
     loadAllConfigs();
 
-    debugLog("loaded %d regular and %d start key bindings",
-             regularKeyBindings.length, startKeyBindings.length);
-
     if (handleArgsAndContinue(args))
     {
         version (OSX)
@@ -72,9 +69,6 @@ int runKeynavish(string[] args)
 
         createWindow();
 
-        debugLog("%d display(s), virtual screen %s",
-                 displayRectangles.length, virtualScreenRectangle);
-
         resetGrid();
 
         addNotifyIcon();
@@ -82,39 +76,13 @@ int runKeynavish(string[] args)
         // On Windows the hook always installs. On macOS it needs Accessibility
         // permission, so a failure here is the normal first-run state rather
         // than an error: keep running and poll until the user grants it, then
-        // install the tap without needing a restart. See MACOS-PORT.md §7.1.
-        if (installKeyboardHook())
-        {
-            debugLog("keyboard hook installed");
-
-            // Installing successfully is not the same as receiving anything:
-            // while another app holds secure input, macOS delivers key events to
-            // no tap at all and keynavish looks dead for reasons that have
-            // nothing to do with keynavish.
-            version (OSX)
-            {
-                auto blocker = secureInputBlocker();
-                if (blocker.active)
-                {
-                    debugLog("WARNING: no key events will be delivered: %s (pid %d) "
-                             ~ "has secure input enabled. %s",
-                             blocker.appName.length > 0 ? blocker.appName : "another app",
-                             blocker.pid,
-                             blocker.instruction.length > 0
-                                 ? blocker.instruction
-                                 : "Turn off secure keyboard entry in that app.");
-                }
-            }
-        }
-        else
+        // install the tap without needing a restart.
+        if (!installKeyboardHook())
         {
             // Ask macOS to show its own permission prompt. Creating the tap
             // while untrusted fails silently, so without this a first run would
             // give no indication beyond a dimmed menu bar icon.
-            auto trusted = requestAccessibilityPermission();
-
-            debugLog("no keyboard hook yet (accessibility permission granted: %s); polling",
-                     trusted);
+            requestAccessibilityPermission();
 
             startPermissionPolling();
             rebuildStatusMenu();
@@ -191,11 +159,10 @@ void showVersion()
 // Output for --help and --version.
 //
 // Windows keynavish is a GUI-subsystem binary with no console attached, so it
-// has always used a message box. On macOS that would not work at all: alerts are
-// presented asynchronously on the main queue (§6.12) and these paths exit before
-// the run loop ever starts, so the alert would never appear -- `--version`
-// printed nothing whatsoever. Writing to stdout is both the working option and
-// the one a Unix user expects.
+// has always used a message box. On macOS alerts are presented asynchronously
+// on the main queue and these paths exit before the run loop starts, so the
+// alert would never appear; stdout is both the working option and the one a
+// Unix user expects.
 //
 private void showMessage(string message)
 {

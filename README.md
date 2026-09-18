@@ -126,17 +126,6 @@ If the menu instead says keynavish needs Accessibility permission, grant it
 in `System Settings -> Privacy & Security -> Accessibility`; keynavish starts
 working immediately, without a restart.
 
-### Anything else
-
-Run keynavish from a terminal with diagnostics enabled:
-
-```
-KEYNAVISH_DEBUG=1 /Applications/keynavish.app/Contents/MacOS/keynavish
-```
-
-It reports the configs it loaded, the displays it found, whether the keyboard
-hook installed, whether secure input is blocking it, and which bindings fire.
-
 ## Building
 
 ### Windows
@@ -174,8 +163,6 @@ Run the test suites with:
 ```
 tools/run-tests.sh
 ```
-
-See [MACOS-PORT.md](MACOS-PORT.md) for the design of the macOS port.
 
 ## Contributing
 

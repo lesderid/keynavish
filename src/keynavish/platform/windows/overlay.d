@@ -8,9 +8,8 @@ import keynavish.types;
 import keynavish.platform.windows.display;
 
 //
-// The overlay window. Moved from window.d during the platform refactor, plus
-// the GDI drawing primitives that paintGrid in grid.d now calls (§5.2b); the
-// drawing itself is unchanged from the original paintGrid.
+// The overlay window, plus the GDI drawing primitives that the shared paintGrid
+// in grid.d calls.
 //
 
 alias Canvas = HDC;
@@ -162,8 +161,8 @@ void strokeRectangles(Canvas canvas, const(Rect)[] rects, uint colour, int lineW
 
     DWORD[] sizes = uint(5).repeat(rects.length).array;
 
-    // The two pens are pre-created rather than built per call, matching the
-    // original: colour determines which one is meant.
+    // The two pens are pre-created rather than built per call, so the colour
+    // selects which one is meant.
     SelectObject(canvas, colour == borderPenColour ? borderPen : mainPen);
     PolyPolyline(canvas, pointArrays.ptr, sizes.ptr, cast(DWORD) rects.length);
 }
@@ -211,10 +210,4 @@ void drawLabel(Canvas canvas, int x, int y, const(char)[] text, uint colour)
 void quitApplication()
 {
     PostQuitMessage(0);
-}
-
-/// Diagnostic parity with macOS, which creates one overlay window per display.
-int overlayWindowCount()
-{
-    return windowHandle is null ? 0 : 1;
 }

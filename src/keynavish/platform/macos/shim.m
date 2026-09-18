@@ -2,13 +2,10 @@
 // Objective-C shim for the macOS port of keynavish.
 //
 // D cannot practically drive AppKit: extern(Objective-C) has no properties,
-// blocks, categories or protocol conformance, and no usable third-party binding
-// exists (see MACOS-PORT.md §5.5). So everything that needs AppKit lives here
-// and is exposed to D as a flat C API.
-//
-// Everything macOS offers as a C API already -- CoreGraphics event taps and
-// event synthesis, display enumeration, the Accessibility API, UCKeyTranslate,
-// CoreText -- is called directly from D and is deliberately NOT wrapped here.
+// blocks, categories or protocol conformance. So everything that needs AppKit
+// lives here and is exposed to D as a flat C API. Everything macOS already
+// offers as a C API -- CoreGraphics, the Accessibility API, UCKeyTranslate,
+// CoreText -- is called directly from D and is deliberately not wrapped here.
 //
 // Build: clang -c -fobjc-arc -o build/shim.o src/keynavish/platform/macos/shim.m
 //
@@ -80,7 +77,7 @@ void knv_app_init(void)
                  object:nil];
 
         // Key names resolve against the active layout, so switching layout has
-        // to invalidate the map. See MACOS-PORT.md §6.3.
+        // to invalidate the map.
         [[NSNotificationCenter defaultCenter]
             addObserver:g_app_delegate
                selector:@selector(layoutChanged:)
@@ -184,7 +181,7 @@ void knv_status_item_set_attention(int attention)
     @autoreleasepool {
         if (!g_status_item) return;
         // Dim the icon while the app is not yet functional (no Accessibility
-        // permission). See MACOS-PORT.md §7.1.
+        // permission).
         g_status_item.button.appearsDisabled = attention ? YES : NO;
     }
 }
@@ -228,17 +225,14 @@ void knv_set_menu_callback(knv_menu_callback cb)
 // ---------------------------------------------------------------------------
 
 //
-// Display enumeration goes through NSScreen rather than CGGetActiveDisplayList.
-// The CoreGraphics call is documented for exactly this and needs no permission,
-// but it reports zero active displays on at least macOS 26 while NSScreen
-// correctly reports them, so it cannot be relied on.
-//
-// Using NSScreen also removes an ordering hazard: the overlay windows are
-// positioned against NSScreen, so enumerating with the same API guarantees
-// index i here means the same display as index i there.
+// Display enumeration goes through NSScreen rather than CGGetActiveDisplayList,
+// which reports zero active displays on at least macOS 26. NSScreen also
+// removes an ordering hazard: the overlay windows are positioned against
+// NSScreen, so enumerating with the same API guarantees index i here means the
+// same display as index i there.
 //
 // Results are converted to the Quartz global display space (top-left origin,
-// Y down) to match keynavish's own coordinate convention. See MACOS-PORT.md §6.1.
+// Y down) to match keynavish's own coordinate convention.
 //
 
 int knv_display_count(void)
@@ -274,7 +268,7 @@ void knv_display_bounds(int index, double *outRect)
 //
 // One borderless window per display, rather than a single window spanning the
 // virtual screen as on Windows: with "Displays have separate Spaces" (the
-// default) a window cannot span displays usefully. See MACOS-PORT.md §6.4.
+// default) a window cannot span displays usefully.
 //
 
 @interface KnvOverlayView : NSView
@@ -364,7 +358,7 @@ void knv_overlay_create(int count, const double *rects)
             // interaction goes through the event tap.
             window.ignoresMouseEvents = YES;
 
-            // Above everything, including captured displays. See §6.4.
+            // Above everything, including captured displays.
             window.level = CGShieldingWindowLevel();
 
             window.collectionBehavior = NSWindowCollectionBehaviorCanJoinAllSpaces
@@ -378,9 +372,7 @@ void knv_overlay_create(int count, const double *rects)
 
             // Programmatically created NSWindows default to releasedWhenClosed
             // YES, which pairs badly with the strong reference held in
-            // g_overlay_windows. 200 create/destroy cycles did not actually
-            // misbehave without this, so it is hardening rather than a fix for
-            // an observed crash -- but relying on that is not worth it.
+            // g_overlay_windows.
             window.releasedWhenClosed = NO;
 
             KnvOverlayView *view = [[KnvOverlayView alloc] initWithFrame:frame];
@@ -425,18 +417,13 @@ void knv_overlay_redraw(void)
     }
 }
 
-int knv_overlay_count(void)
-{
-    return (int) g_overlay_windows.count;
-}
-
 // ---------------------------------------------------------------------------
 // Alerts
 // ---------------------------------------------------------------------------
 
 // Presented on the main queue rather than synchronously: a modal alert raised
 // from inside the CGEventTap callback would block the run loop and get the tap
-// disabled by timeout. See MACOS-PORT.md §6.12.
+// disabled by timeout.
 static void knv_alert(const char *message, NSAlertStyle style)
 {
     NSString *text = [NSString stringWithUTF8String:message];
@@ -455,7 +442,7 @@ static void knv_alert(const char *message, NSAlertStyle style)
 //
 // Unlike the alerts above this one blocks, which is safe ONLY because it is
 // reached from a menu action on the main thread. It must never be called from
-// the event tap callback -- see MACOS-PORT.md 6.12.
+// the event tap callback.
 int knv_alert_choice(const char *message, const char *button0,
                      const char *button1, const char *button2)
 {
@@ -556,22 +543,14 @@ const char *knv_home_directory(void)
 
 #import <IOKit/IOKitLib.h>
 
-// PID that the window server attributes secure input to, or 0 if none.
-//
-// While any process holds secure input, macOS delivers key events to no event
-// tap at all, so keynavish looks broken for reasons that have nothing to do with
-// keynavish. Knowing WHICH app lets the UI say where the setting lives, which is
-// the difference between actionable advice and a shrug.
-//
-// The console-user dictionary is the only public place this is exposed;
+// PID that the window server attributes secure input to, or 0 if none. The
+// console-user dictionary is the only public place this is exposed;
 // IsSecureEventInputEnabled() answers whether, but not who.
 //
-// CAVEAT, measured rather than assumed: this is what the window server
-// attributes, which is not always the literal holder. A GUI app holding it is
-// reported correctly (verified with Terminal), but when a non-GUI process calls
-// EnableSecureEventInput() directly the registry named an unrelated foreground
-// app instead. So the UI treats this as a strong hint, and never states that
-// the named app is definitively the only cause.
+// CAVEAT: this is what the window server attributes, which is not always the
+// literal holder. A GUI app holding it is reported correctly, but when a
+// non-GUI process calls EnableSecureEventInput() directly the registry names an
+// unrelated foreground app instead. So the UI treats this as a hint only.
 int knv_secure_input_pid(void)
 {
     @autoreleasepool {
@@ -621,12 +600,9 @@ static const char *copyToBuffer(NSString *value, char *buffer, size_t size)
     return buffer;
 }
 
-// Display name for a pid, or NULL.
-//
-// Takes the pid rather than looking it up again: the caller reads the holder
-// once and resolves everything from that single observation, so the name, the
-// bundle id and the pid the menu later acts on cannot disagree if the holder
-// changes in between.
+// Display name for a pid, or NULL. Takes the pid rather than looking it up
+// again, so the name, the bundle id and the pid the menu later acts on cannot
+// disagree if the holder changes in between.
 const char *knv_app_name_for_pid(int pid)
 {
     @autoreleasepool {
@@ -673,10 +649,6 @@ void knv_activate_app_with_pid(int pid)
 
 // Shows the system's own "wants to control this computer" prompt, and reports
 // whether the process is already trusted.
-//
-// Done here rather than in D because building the options dictionary needs
-// kAXTrustedCheckOptionPrompt and kCFBooleanTrue; a literal NSDictionary is far
-// less error-prone than the equivalent CoreFoundation calls.
 int knv_request_accessibility_permission(void)
 {
     @autoreleasepool {
@@ -692,8 +664,8 @@ int knv_request_accessibility_permission(void)
 typedef void (*knv_async_callback)(void);
 
 // Runs a callback on the main queue after the current work finishes. Used to
-// tear down and rebuild the event tap from outside the tap's own callback,
-// which must not block or destroy the port it is running on.
+// tear down the event tap from outside the tap's own callback, which must not
+// destroy the port it is running on.
 void knv_dispatch_async(knv_async_callback cb)
 {
     if (!cb) return;
@@ -712,7 +684,7 @@ typedef void (*knv_timer_callback)(void);
 static NSTimer *g_timer;
 
 // Used to poll for the Accessibility grant so the app starts working the moment
-// the user flips the switch, with no restart. See MACOS-PORT.md §7.1.
+// the user flips the switch, with no restart.
 void knv_schedule_timer(double intervalSeconds, knv_timer_callback cb)
 {
     @autoreleasepool {

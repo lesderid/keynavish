@@ -5,12 +5,6 @@ version (OSX):
 //
 // Declarations for the Objective-C shim (shim.m).
 //
-// Only AppKit-dependent functionality lives behind the shim. CoreGraphics,
-// the Accessibility API, UCKeyTranslate and CoreText are plain C and are bound
-// directly in the modules that use them.
-//
-
-import core.stdc.config : c_long;
 
 extern (C):
 nothrow:
@@ -28,18 +22,16 @@ void knv_terminate();
 void knv_set_screens_changed_callback(ScreensChangedCallback cb);
 void knv_set_layout_changed_callback(LayoutChangedCallback cb);
 
-// Displays (NSScreen; CGGetActiveDisplayList is unreliable, see shim.m)
+// Displays
 int knv_display_count();
 void knv_display_bounds(int index, double* outRect);
 
 // Overlay windows
 void knv_set_paint_callback(PaintCallback cb);
 void knv_overlay_create(int count, const(double)* rects);
-void knv_overlay_destroy();
 void knv_overlay_show();
 void knv_overlay_hide();
 void knv_overlay_redraw();
-int knv_overlay_count();
 
 // Status item
 void knv_status_item_create(const(char)* symbolName, const(char)* tooltip);
@@ -49,8 +41,6 @@ void knv_menu_add_item(const(char)* title, int tag, int checked, int enabled);
 void knv_menu_add_separator();
 void knv_set_menu_callback(MenuCallback cb);
 
-/// Fires just before the status menu is displayed, so time-varying entries can
-/// be refreshed.
 alias MenuOpeningCallback = extern (C) void function();
 void knv_set_menu_opening_callback(MenuOpeningCallback cb);
 
@@ -73,7 +63,7 @@ const(char)* knv_resource_path();
 const(char)* knv_bundle_path();
 const(char)* knv_home_directory();
 
-// Secure input: which process is holding it, if any (§11).
+// Secure input: which process is holding it, if any
 int knv_secure_input_pid();
 const(char)* knv_app_name_for_pid(int pid);
 const(char)* knv_bundle_id_for_pid(int pid);
@@ -86,11 +76,11 @@ int knv_request_accessibility_permission();
 alias AsyncCallback = extern (C) void function();
 void knv_dispatch_async(AsyncCallback cb);
 
-// Timers (used to poll for the Accessibility grant, §7.1)
+// Timers
 alias TimerCallback = extern (C) void function();
 void knv_schedule_timer(double intervalSeconds, TimerCallback cb);
 void knv_cancel_timer();
 
-// Launch at login (SMAppService, macOS 13+)
+// Launch at login
 int knv_login_item_enabled();
 int knv_login_item_set(int enabled);

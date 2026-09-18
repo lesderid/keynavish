@@ -10,9 +10,9 @@ import keynavish.platform.macos.coretext;
 import keynavish.platform.macos.display;
 
 //
-// One borderless overlay window per display (§6.4), with the grid drawn from D
-// via CoreGraphics/CoreText. The Objective-C shim owns the NSWindows and calls
-// back into paintCallback below.
+// One borderless overlay window per display, with the grid drawn from D via
+// CoreGraphics/CoreText. The Objective-C shim owns the NSWindows and calls back
+// into paintCallback below.
 //
 
 alias Canvas = CGContextRef;
@@ -110,7 +110,7 @@ extern (C) void paintCallback(int displayIndex, void* context, double width, dou
 }
 
 //
-// Drawing primitives used by the shared paintGrid in grid.d (§5.2b).
+// Drawing primitives used by the shared paintGrid in grid.d.
 //
 
 private CGColorSpaceRef deviceColourSpace()
@@ -128,9 +128,8 @@ private CGColorSpaceRef deviceColourSpace()
 private CGColorRef makeColour(uint colour)
 {
     // Device RGB, not CGColorCreateGenericRGB: generic RGB is colour-managed on
-    // its way to the display, which shifts the values -- RGB(30,64,64) came out
-    // as (38,81,81). The grid colours have to match the Windows build exactly,
-    // so the components are used as-is.
+    // its way to the display, which shifts the values away from the Windows
+    // build's -- RGB(30,64,64) came out as (38,81,81).
     CGFloat[4] components = [colour.redOf / 255.0,
                              colour.greenOf / 255.0,
                              colour.blueOf / 255.0,
@@ -256,7 +255,7 @@ void drawLabel(Canvas canvas, int x, int y, const(char)[] text, uint colour)
 
     // The overlay view is flipped (top-left origin, Y down) to match the grid
     // coordinate convention, so the text matrix has to be flipped back or the
-    // glyphs render upside down. See MACOS-PORT.md §6.5.
+    // glyphs render upside down.
     CGContextSetTextMatrix(canvas, CGAffineTransform(1, 0, 0, -1, 0, 0));
 
     // y is the top of the text box; CoreText draws from the baseline.
@@ -270,11 +269,4 @@ void quitApplication()
     quitting = true;
 
     knv_terminate();
-}
-
-/// Number of overlay windows currently created, for diagnostics: a nonzero
-/// `active` with zero windows means the grid is logically up but invisible.
-int overlayWindowCount()
-{
-    return knv_overlay_count();
 }

@@ -15,7 +15,7 @@ static this()
 //
 // Callable rather than inlined into the module constructor because the macOS
 // build re-runs it when the keyboard layout changes: bindings store resolved
-// keycodes, so they have to be resolved again against the new layout (§6.3).
+// keycodes, so they have to be resolved again against the new layout.
 //
 void registerDefaultKeyBindings()
 {
@@ -256,11 +256,9 @@ private bool handleGridNavKey(KeyCode keyCode, BitFlags!ModifierKey modifiers)
 }
 
 //
-// The whole decision path for a key press, shared between platforms: which
-// binding matches, whether grid-nav intercepts it, whether it gets recorded,
-// and whether the key should be swallowed. Each platform contributes only a
-// thin callback that translates its native event into (keyCode, modifiers) and
-// acts on the returned "consume" flag. See MACOS-PORT.md §5.2b.
+// The whole decision path for a key press, shared between platforms. Each
+// platform contributes only a thin callback that translates its native event
+// into (keyCode, modifiers) and acts on the returned "consume" flag.
 //
 // Returns true when the key should be swallowed rather than passed on.
 //
@@ -276,7 +274,6 @@ bool handleKeyDown(KeyCode keyCode, BitFlags!ModifierKey modifiers)
         auto keyBindingRange = startKeyBindings.find!(b => b.keyCombination == pressedCombination);
         if (!keyBindingRange.empty)
         {
-            debugLog("start binding matched (keycode %d)", keyCode);
             processCommands(keyBindingRange[0].commands);
             return true;
         }
@@ -306,13 +303,6 @@ bool handleKeyDown(KeyCode keyCode, BitFlags!ModifierKey modifiers)
                 recordCommands(keyBindingRange[0].commands);
             }
             processCommands(keyBindingRange[0].commands);
-        }
-        else if (!isModifierKey(keyCode))
-        {
-            // Swallowed while the grid is up but matching nothing. If this fires
-            // for a key the user expected to work, the grid is active when they
-            // did not think it was.
-            debugLog("no binding for keycode %d while active; key swallowed", keyCode);
         }
     }
 

@@ -40,17 +40,10 @@ private void start()
     }
 
     showWindow();
-
-    debugLog("start: grid %dx%d at (%d,%d)-(%d,%d), %d overlay window(s)",
-             grid.columns, grid.rows,
-             grid.rect.left, grid.rect.top, grid.rect.right, grid.rect.bottom,
-             overlayWindowCount);
 }
 
 private void end()
 {
-    debugLog("end");
-
     hideWindow();
 }
 
@@ -81,7 +74,7 @@ void restart()
 
         // Re-exec the bundle rather than the inner binary, so the relaunched
         // process keeps its bundle identity -- and with it the Accessibility
-        // grant, which is keyed on bundle id plus signature (§7.2).
+        // grant, which is keyed on bundle id plus signature.
         auto bundle = knv_bundle_path();
         if (bundle !is null)
         {
@@ -345,13 +338,11 @@ void loadAllConfigs()
     }
     else
     {
-        // Recordings are deferred on macOS (§6.3), so the files are not read at
-        // all. Parsing them anyway would be worse than useless: an existing
-        // ~/.keynav_macros written on Windows holds Windows keycodes that mean
-        // nothing here, and loadRecordings warns on duplicates -- so a shared
-        // macros file could raise alerts at startup for a feature that does
-        // nothing. That contradicts the promise that deferred commands are
-        // simply inert.
+        // Recordings are not implemented on macOS, so the files are not read
+        // at all: an existing ~/.keynav_macros written on Windows holds Windows
+        // keycodes that mean nothing here, and loadRecordings warns on
+        // duplicates, so a shared macros file could raise alerts at startup for
+        // a feature that does nothing.
     }
 }
 
@@ -359,7 +350,7 @@ void loadAllConfigs()
 ///
 /// Used on macOS when the keyboard layout changes: key names resolve to
 /// keycodes at registration time, so the existing bindings would otherwise keep
-/// pointing at the previous layout's physical keys (§6.3).
+/// pointing at the previous layout's physical keys.
 void reloadAllKeyBindings()
 {
     clear();
@@ -381,9 +372,9 @@ private string[] portableConfigPaths()
     }
     else
     {
-        // Inside the bundle, next to the executable is Contents/MacOS, which is
-        // not a place a user would ever look; the shipped default lives in
-        // Contents/Resources instead. See MACOS-PORT.md §6.11.
+        // Inside the bundle, next to the executable is Contents/MacOS, which
+        // is not a place a user would ever look; the shipped default lives in
+        // Contents/Resources instead.
         import core.stdc.string : strlen;
         import std.path : buildPath;
         import keynavish.platform.macos.shim : knv_resource_path;
@@ -514,10 +505,10 @@ private void record(string path = null)
     }
     else
     {
-        // Recordings are deferred on macOS (MACOS-PORT.md §6.3). This must stay
-        // silent rather than erroring: `q record ~/.keynav_macros` is in the
-        // stock keybindings, so a shared keynavrc would otherwise raise a dialog
-        // on an ordinary keystroke.
+        // Not implemented on macOS. This must stay silent rather than
+        // erroring: `q record ~/.keynav_macros` is in the stock keybindings, so
+        // a shared keynavrc would otherwise raise a dialog on an ordinary
+        // keystroke.
     }
 }
 
