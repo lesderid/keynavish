@@ -2,7 +2,7 @@ module keynavish.platform.macos.keys;
 
 version (OSX):
 
-import std.typecons : Nullable;
+import std.typecons : BitFlags, Nullable;
 import keynavish.types;
 import keynavish.platform.macos.coregraphics;
 
@@ -89,7 +89,7 @@ private immutable KeyCode[10] keypadCodes =
 
 // --- Layout-derived character map -------------------------------------------
 
-private KeyCode[dchar] charToKeyCode;
+private ResolvedKey[dchar] charToKeyCode;
 private dchar[KeyCode] keyCodeToChar;
 private bool layoutMapBuilt;
 
@@ -103,10 +103,34 @@ private enum : uint
     shiftOptionState = shiftedState | optionState,
 }
 
-/// The layers scanned when building the character map, in priority order:
-/// the first layer that produces a character owns it.
-private immutable uint[4] layerStates =
-    [unshiftedState, shiftedState, optionState, shiftOptionState];
+/// A layer of the active layout, and the modifiers a binding has to carry for a
+/// character that is only reachable there.
+///
+/// The Shift layer implies nothing, matching Windows and keynav: `@` is the
+/// shifted `2` on a US layout and the stock config already spells
+/// `shift+at`. The Option layers are different -- no portable keynavrc can
+/// spell an Option level, and the character cannot be typed without it, so the
+/// resolver has to supply the whole combination it knows is required, Shift
+/// included.
+private struct Layer
+{
+    uint state;
+    BitFlags!ModifierKey implied;
+}
+
+/// Scanned in priority order: the first layer that produces a character owns it.
+private Layer[4] layers()
+{
+    BitFlags!ModifierKey none = ModifierKey.none;
+    BitFlags!ModifierKey alt = ModifierKey.alt;
+    BitFlags!ModifierKey shiftAlt = ModifierKey.shift;
+    shiftAlt |= ModifierKey.alt;
+
+    return [Layer(unshiftedState, none),
+            Layer(shiftedState, none),
+            Layer(optionState, alt),
+            Layer(shiftOptionState, shiftAlt)];
+}
 
 /// Translates one keycode through a layout in one modifier state.
 private dchar translateKeyCode(const(ubyte)* layout, KeyCode keyCode, uint modifierState)
@@ -151,20 +175,23 @@ void buildLayoutMap()
     // other stock macOS layouts, `@` and `[` are only reachable with Option, so
     // without them `shift+at playback` and `ctrl+bracketleft end` -- both in the
     // default bindings -- fail to resolve and alert on every startup.
-    foreach (state; layerStates)
+    foreach (layer; layers)
     {
         // 0x00..0x7F covers every key the layout can produce a character for.
         foreach (KeyCode keyCode; 0 .. 0x80)
         {
-            auto character = translateKeyCode(layout.ptr, keyCode, state);
+            auto character = translateKeyCode(layout.ptr, keyCode, layer.state);
             if (character == dchar.init) continue;
 
             // First keycode wins, so the main row beats the keypad for digits.
-            if (character !in charToKeyCode) charToKeyCode[character] = keyCode;
+            if (character !in charToKeyCode)
+            {
+                charToKeyCode[character] = ResolvedKey(keyCode, layer.implied);
+            }
 
             // Grid-nav matches cells by the letter printed on the key, so only
             // the unshifted layer feeds the reverse map.
-            if (state == unshiftedState && keyCode !in keyCodeToChar)
+            if (layer.state == unshiftedState && keyCode !in keyCodeToChar)
             {
                 keyCodeToChar[keyCode] = character;
             }
@@ -262,37 +289,40 @@ private dchar characterForKeyName(string name)
     }
 }
 
-/// Resolves a keynav key name to a macOS virtual keycode.
-Nullable!KeyCode resolveKeyName(string name)
+/// Resolves a keynav key name to a macOS virtual keycode, plus any modifiers
+/// the active layout requires to produce it.
+Nullable!ResolvedKey resolveKeyName(string name)
 {
     if (!layoutMapBuilt) buildLayoutMap();
 
-    alias Result = Nullable!KeyCode;
+    alias Result = Nullable!ResolvedKey;
+
+    static Result key(KeyCode keyCode) { return Result(ResolvedKey(keyCode)); }
 
     switch (name)
     {
-        case "Super_L":   return Result(kVK_Command);
-        case "Super_R":   return Result(kVK_RightCommand);
-        case "Escape":    return Result(kVK_Escape);
-        case "Tab":       return Result(kVK_Tab);
-        case "Left":      return Result(kVK_LeftArrow);
-        case "Up":        return Result(kVK_UpArrow);
-        case "Right":     return Result(kVK_RightArrow);
-        case "Down":      return Result(kVK_DownArrow);
-        case "Home":      return Result(kVK_Home);
-        case "End":       return Result(kVK_End);
+        case "Super_L":   return key(kVK_Command);
+        case "Super_R":   return key(kVK_RightCommand);
+        case "Escape":    return key(kVK_Escape);
+        case "Tab":       return key(kVK_Tab);
+        case "Left":      return key(kVK_LeftArrow);
+        case "Up":        return key(kVK_UpArrow);
+        case "Right":     return key(kVK_RightArrow);
+        case "Down":      return key(kVK_DownArrow);
+        case "Home":      return key(kVK_Home);
+        case "End":       return key(kVK_End);
         case "Prior":
-        case "Page_Up":   return Result(kVK_PageUp);
+        case "Page_Up":   return key(kVK_PageUp);
         case "Next":
-        case "Page_Down": return Result(kVK_PageDown);
-        case "Delete":    return Result(kVK_ForwardDelete);
-        case "BackSpace": return Result(kVK_Backspace);
-        case "Return":    return Result(kVK_Return);
-        case "space":     return Result(kVK_Space);
+        case "Page_Down": return key(kVK_PageDown);
+        case "Delete":    return key(kVK_ForwardDelete);
+        case "BackSpace": return key(kVK_Backspace);
+        case "Return":    return key(kVK_Return);
+        case "space":     return key(kVK_Space);
 
         // macOS has no Insert key. Help occupies the same physical position on
         // an extended keyboard, which is the closest thing available.
-        case "Insert":    return Result(kVK_Help);
+        case "Insert":    return key(kVK_Help);
 
         default: break;
     }
@@ -300,7 +330,7 @@ Nullable!KeyCode resolveKeyName(string name)
     // Keypad keys, e.g. KP_7.
     if (name.length == 4 && name[0 .. 3] == "KP_" && name[3] >= '0' && name[3] <= '9')
     {
-        return Result(keypadCodes[name[3] - '0']);
+        return key(keypadCodes[name[3] - '0']);
     }
 
     auto character = characterForKeyName(name);
@@ -311,12 +341,10 @@ Nullable!KeyCode resolveKeyName(string name)
         {
             return Result(*found);
         }
-
-        // The name is a known character key, but the active layout has no key
-        // that produces it. Caller reports this as an unresolvable key.
-        return Result.init;
     }
 
+    // Either not a character key name at all, or one the active layout has no
+    // key for. Caller reports both as an unresolvable key.
     return Result.init;
 }
 

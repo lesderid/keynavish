@@ -14,65 +14,68 @@ import keynavish.types;
 // needed here, unlike on macOS.
 //
 
-/// Resolves a keynav key name to a Windows virtual-key code.
-Nullable!KeyCode resolveKeyName(string name)
+/// Resolves a keynav key name to a Windows virtual-key code. Windows key names
+/// never imply modifiers of their own: the layout driver maps scancode to VK.
+Nullable!ResolvedKey resolveKeyName(string name)
 {
-    alias Result = Nullable!KeyCode;
+    alias Result = Nullable!ResolvedKey;
+
+    static Result key(KeyCode keyCode) { return Result(ResolvedKey(keyCode)); }
 
     switch (name)
     {
-        case "Super_L":     return Result(cast(KeyCode) VK_LWIN);
-        case "Super_R":     return Result(cast(KeyCode) VK_RWIN);
-        case "semicolon":   return Result(cast(KeyCode) VK_OEM_1);
-        case "Escape":      return Result(cast(KeyCode) VK_ESCAPE);
-        case "Tab":         return Result(cast(KeyCode) VK_TAB);
-        case "Left":        return Result(cast(KeyCode) VK_LEFT);
-        case "Up":          return Result(cast(KeyCode) VK_UP);
-        case "Right":       return Result(cast(KeyCode) VK_RIGHT);
-        case "Down":        return Result(cast(KeyCode) VK_DOWN);
-        case "Insert":      return Result(cast(KeyCode) VK_INSERT);
-        case "Home":        return Result(cast(KeyCode) VK_HOME);
-        case "End":         return Result(cast(KeyCode) VK_END);
+        case "Super_L":     return key(cast(KeyCode) VK_LWIN);
+        case "Super_R":     return key(cast(KeyCode) VK_RWIN);
+        case "semicolon":   return key(cast(KeyCode) VK_OEM_1);
+        case "Escape":      return key(cast(KeyCode) VK_ESCAPE);
+        case "Tab":         return key(cast(KeyCode) VK_TAB);
+        case "Left":        return key(cast(KeyCode) VK_LEFT);
+        case "Up":          return key(cast(KeyCode) VK_UP);
+        case "Right":       return key(cast(KeyCode) VK_RIGHT);
+        case "Down":        return key(cast(KeyCode) VK_DOWN);
+        case "Insert":      return key(cast(KeyCode) VK_INSERT);
+        case "Home":        return key(cast(KeyCode) VK_HOME);
+        case "End":         return key(cast(KeyCode) VK_END);
         case "Prior":
-        case "Page_Up":     return Result(cast(KeyCode) VK_PRIOR);
+        case "Page_Up":     return key(cast(KeyCode) VK_PRIOR);
         case "Next":
-        case "Page_Down":   return Result(cast(KeyCode) VK_NEXT);
-        case "Delete":      return Result(cast(KeyCode) VK_DELETE);
-        case "BackSpace":   return Result(cast(KeyCode) VK_BACK);
-        case "Return":      return Result(cast(KeyCode) VK_RETURN);
-        case "space":       return Result(cast(KeyCode) VK_SPACE);
-        case "bracketleft": return Result(cast(KeyCode) VK_OEM_4);
-        case "backslash":   return Result(cast(KeyCode) VK_OEM_5);
-        case "bracketright":return Result(cast(KeyCode) VK_OEM_6);
+        case "Page_Down":   return key(cast(KeyCode) VK_NEXT);
+        case "Delete":      return key(cast(KeyCode) VK_DELETE);
+        case "BackSpace":   return key(cast(KeyCode) VK_BACK);
+        case "Return":      return key(cast(KeyCode) VK_RETURN);
+        case "space":       return key(cast(KeyCode) VK_SPACE);
+        case "bracketleft": return key(cast(KeyCode) VK_OEM_4);
+        case "backslash":   return key(cast(KeyCode) VK_OEM_5);
+        case "bracketright":return key(cast(KeyCode) VK_OEM_6);
 
         //HACK: This doesn't have its own vkcode on Windows, but on X11 it has its own keysym
-        case "at":          return Result(cast(KeyCode) '2');
+        case "at":          return key(cast(KeyCode) '2');
 
         case "plus":
-        case "equal":       return Result(cast(KeyCode) VK_OEM_PLUS);
-        case "comma":       return Result(cast(KeyCode) VK_OEM_COMMA);
-        case "minus":       return Result(cast(KeyCode) VK_OEM_MINUS);
-        case "period":      return Result(cast(KeyCode) VK_OEM_PERIOD);
-        case "slash":       return Result(cast(KeyCode) VK_OEM_2);
-        case "grave":       return Result(cast(KeyCode) VK_OEM_3);
-        case "apostrophe":  return Result(cast(KeyCode) VK_OEM_7);
+        case "equal":       return key(cast(KeyCode) VK_OEM_PLUS);
+        case "comma":       return key(cast(KeyCode) VK_OEM_COMMA);
+        case "minus":       return key(cast(KeyCode) VK_OEM_MINUS);
+        case "period":      return key(cast(KeyCode) VK_OEM_PERIOD);
+        case "slash":       return key(cast(KeyCode) VK_OEM_2);
+        case "grave":       return key(cast(KeyCode) VK_OEM_3);
+        case "apostrophe":  return key(cast(KeyCode) VK_OEM_7);
 
         default: break;
     }
 
     if (name.length == 1 && name[0] >= 'a' && name[0] <= 'z')
     {
-        return Result(cast(KeyCode)('A' + (name[0] - 'a')));
+        return key(cast(KeyCode)('A' + (name[0] - 'a')));
     }
 
     if (name.length == 1 && name[0] >= '0' && name[0] <= '9')
     {
-        return Result(cast(KeyCode) name[0]);
+        return key(cast(KeyCode) name[0]);
     }
 
     if (name.length == 4 && name[0 .. 3] == "KP_" && name[3] >= '0' && name[3] <= '9')
     {
-        return Result(cast(KeyCode)(0x60 + name[3] - '0'));
+        return key(cast(KeyCode)(0x60 + name[3] - '0'));
     }
 
     return Result.init;

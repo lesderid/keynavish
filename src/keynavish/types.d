@@ -44,6 +44,20 @@ else
     alias KeyCode = uint;
 }
 
+/// A key name resolved against the platform's keyboard layout: the keycode,
+/// plus any modifiers the layout itself requires to produce that character.
+///
+/// The modifiers matter on macOS, where a layout can put an ASCII character
+/// behind Option; a binding that carried only the keycode would resolve and
+/// then never match the event. Windows key names never imply modifiers.
+struct ResolvedKey
+{
+    import std.typecons : BitFlags;
+
+    KeyCode keyCode;
+    BitFlags!ModifierKey modifiers;
+}
+
 enum ModifierKey
 {
     none   = 0,

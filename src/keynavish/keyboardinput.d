@@ -158,7 +158,12 @@ Nullable!KeyCombination parseKeyCombination(string[] keyStrings)
             return typeof(return)();
         }
 
-        if (!setKeyCode(resolved.get())) return typeof(return)();
+        // A layout can put a character behind a modifier of its own -- Option,
+        // on several stock macOS layouts. That modifier is part of the key
+        // press, so the binding has to carry it or it can never match.
+        combination.modifiers |= resolved.get().modifiers;
+
+        if (!setKeyCode(resolved.get().keyCode)) return typeof(return)();
     }
 
     return typeof(return)(combination);

@@ -39,7 +39,12 @@ private void checkResolvesTo(string keyName, KeyCode expected)
 {
     auto resolved = resolveKeyName(keyName);
     check("'" ~ keyName ~ "' resolves to the expected keycode",
-          !resolved.isNull && resolved.get() == expected);
+          !resolved.isNull && resolved.get().keyCode == expected);
+}
+
+private KeyCode codeOf(string keyName)
+{
+    return resolveKeyName(keyName).get().keyCode;
 }
 
 void main()
@@ -113,6 +118,24 @@ void main()
     // shifted layer and bind the unshifted key instead.
     check("uppercase letter name is rejected", resolveKeyName("A").isNull);
 
+    printf("\nlayout-implied modifiers\n");
+
+    // A character the layout puts on its unshifted or Shift layer implies
+    // nothing: the config spells any Shift itself, as it does on Windows.
+    // Anything reachable only with Option must carry that Option, or the
+    // binding resolves and then never matches the event.
+    foreach (name; ["a", "semicolon", "at", "bracketleft", "slash"])
+    {
+        auto resolved = resolveKeyName(name);
+        if (resolved.isNull) continue;
+
+        // Every one of these is reachable without Option on an ASCII layout,
+        // so nothing should be implied here. The Option layers can only be
+        // exercised on a layout that actually needs them.
+        check("'" ~ name ~ "' implies no modifiers on an ASCII layout",
+              !resolved.get().modifiers);
+    }
+
     printf("\nround-tripping\n");
 
     // Grid-nav matches cells by letter, so keycode -> character has to invert
@@ -123,7 +146,7 @@ void main()
         auto resolved = resolveKeyName([letter].idup);
         if (resolved.isNull) continue;
 
-        if (characterForKeyCode(resolved.get()) == letter) roundTripped++;
+        if (characterForKeyCode(resolved.get().keyCode) == letter) roundTripped++;
     }
     check("all letters round-trip through characterForKeyCode", roundTripped == 26);
 
@@ -138,7 +161,7 @@ void main()
     foreach (letter; "abcdefghijklmnopqrstuvwxyz")
     {
         auto resolved = resolveKeyName([letter].idup);
-        if (!resolved.isNull) letterCodes ~= resolved.get();
+        if (!resolved.isNull) letterCodes ~= resolved.get().keyCode;
     }
     check("letter keycodes are all distinct",
           letterCodes.sort.uniq.array.length == letterCodes.length);
@@ -154,7 +177,7 @@ void main()
     check("Shift is a modifier", isModifierKey(kVK_Shift));
     check("Control is a modifier", isModifierKey(kVK_Control));
     check("Option is a modifier", isModifierKey(kVK_Option));
-    check("a letter is not a modifier", !isModifierKey(resolveKeyName("a").get()));
+    check("a letter is not a modifier", !isModifierKey(codeOf("a")));
     check("Escape is recognised", isEscapeKey(kVK_Escape));
 
     printf("\n%d checks, %d failures\n", checks, failures);
