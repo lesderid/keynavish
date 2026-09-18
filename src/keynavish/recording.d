@@ -2,11 +2,11 @@ module keynavish.recording;
 
 import keynavish;
 
-import core.sys.windows.windows : DWORD;
+import keynavish.types : KeyCode;
 
 struct Recording
 {
-    DWORD vkCode;
+    KeyCode vkCode;
     string[][] commands;
     string path;
 
@@ -55,7 +55,7 @@ void loadRecordings()
             if (parts[0].length == 0)
                 continue;
 
-            auto vkCode = parts[0].to!DWORD;
+            auto vkCode = parts[0].to!KeyCode;
 
             auto commands = parts[2].parseCommaDelimitedCommands();
 
@@ -79,7 +79,7 @@ void startReplaying()
     replaying = true;
 }
 
-void replay(DWORD vkCode)
+void replay(KeyCode vkCode)
 {
     import std.algorithm : find;
     import std.range : empty;
@@ -140,7 +140,7 @@ void stopRecording()
     activeRecording = Recording();
 }
 
-void setRecordingKey(DWORD vkCode)
+void setRecordingKey(KeyCode vkCode)
 {
     activeRecording.vkCode = vkCode;
 

@@ -1,4 +1,6 @@
-module keynavish.notifyicon;
+module keynavish.platform.windows.trayicon;
+
+version (Windows):
 
 import keynavish;
 
@@ -77,7 +79,7 @@ void handleCommand(MenuItem menuItem)
             restart();
             break;
         case Exit:
-            PostQuitMessage(0);
+            quitApplication();
             break;
         case None:
             break;
@@ -208,4 +210,12 @@ void editConfigFile()
     }
 
     ShellExecute(null, "open", path.toUTF16z, null, null, SW_SHOWNORMAL);
+}
+
+/// Parity stubs for the macOS permission flow, which has no Windows equivalent.
+void setStatusItemAttention(bool attention) {}
+
+void rebuildStatusMenu()
+{
+    // The Windows menu is rebuilt on every right-click in createPopUpMenu.
 }
