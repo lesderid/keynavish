@@ -48,10 +48,14 @@ Nullable!KeyCode resolveKeyName(string name)
         //HACK: This doesn't have its own vkcode on Windows, but on X11 it has its own keysym
         case "at":          return Result(cast(KeyCode) '2');
 
-        case "plus":        return Result(cast(KeyCode) VK_OEM_PLUS);
+        case "plus":
+        case "equal":       return Result(cast(KeyCode) VK_OEM_PLUS);
         case "comma":       return Result(cast(KeyCode) VK_OEM_COMMA);
         case "minus":       return Result(cast(KeyCode) VK_OEM_MINUS);
         case "period":      return Result(cast(KeyCode) VK_OEM_PERIOD);
+        case "slash":       return Result(cast(KeyCode) VK_OEM_2);
+        case "grave":       return Result(cast(KeyCode) VK_OEM_3);
+        case "apostrophe":  return Result(cast(KeyCode) VK_OEM_7);
 
         default: break;
     }

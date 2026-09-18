@@ -127,11 +127,12 @@ void buildLayoutMap()
 {
     charToKeyCode = null;
     keyCodeToChar = null;
-    layoutMapBuilt = true;
 
     // Fetched once rather than per keycode: this runs 256 translations.
     auto layout = currentKeyboardLayoutData();
     if (layout is null) return;
+
+    layoutMapBuilt = true;
 
     // 0x00..0x7F covers every key the layout can produce a character for.
     foreach (KeyCode keyCode; 0 .. 0x80)
@@ -216,9 +217,10 @@ dchar characterForKeyCode(KeyCode keyCode)
 /// not a character key.
 private dchar characterForKeyName(string name)
 {
-    import std.ascii : isAlphaNum;
-
-    if (name.length == 1 && name[0].isAlphaNum)
+    // Lowercase only, matching the Windows table: an uppercase name would
+    // resolve through the shifted half of the map and bind the unshifted key.
+    if (name.length == 1 && ((name[0] >= 'a' && name[0] <= 'z')
+                             || (name[0] >= '0' && name[0] <= '9')))
     {
         return name[0];
     }
