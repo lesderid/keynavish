@@ -471,10 +471,30 @@ void knv_alert_info(const char *message)    { knv_alert(message, NSAlertStyleInf
 // ---------------------------------------------------------------------------
 
 // The interval within which two clicks count as a double click, in seconds, as
-// the user has it set in System Settings.
+// the user has it set in System Settings, or 0 if it cannot be determined.
+//
+// NSEvent is asked first but cannot be trusted alone: it answers 0.0 in a
+// process the window server has not fully associated with the login session,
+// measured here from a plain command-line build. Falling back to the preference
+// the Mouse settings pane writes means a user who has moved that slider still
+// gets the speed they chose; with neither available the caller applies the
+// macOS default.
 double knv_double_click_interval(void)
 {
-    return [NSEvent doubleClickInterval];
+    @autoreleasepool {
+        double interval = [NSEvent doubleClickInterval];
+        if (interval > 0) return interval;
+
+        id threshold = [[NSUserDefaults standardUserDefaults]
+                           objectForKey:@"com.apple.mouse.doubleClickThreshold"];
+        if ([threshold isKindOfClass:[NSNumber class]])
+        {
+            double seconds = [(NSNumber *)threshold doubleValue];
+            if (seconds > 0) return seconds;
+        }
+
+        return 0;
+    }
 }
 
 // ---------------------------------------------------------------------------
