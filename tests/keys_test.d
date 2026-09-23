@@ -124,17 +124,30 @@ void main()
     // nothing: the config spells any Shift itself, as it does on Windows.
     // Anything reachable only with Option must carry that Option, or the
     // binding resolves and then never matches the event.
-    foreach (name; ["a", "semicolon", "at", "bracketleft", "slash"])
+    // Whichever layout this runs under, a layout can only ever imply the
+    // modifiers that select one of its layers -- never Control or Command.
+    foreach (name; ["a", "semicolon", "at", "bracketleft", "slash", "grave", "equal"])
     {
         auto resolved = resolveKeyName(name);
         if (resolved.isNull) continue;
 
-        // Every one of these is reachable without Option on an ASCII layout,
-        // so nothing should be implied here. The Option layers can only be
-        // exercised on a layout that actually needs them.
-        check("'" ~ name ~ "' implies no modifiers on an ASCII layout",
-              !resolved.get().modifiers);
+        auto implied = resolved.get().modifiers;
+        check("'" ~ name ~ "' implies only layer modifiers",
+              !(implied & ModifierKey.ctrl) && !(implied & ModifierKey.super_));
     }
+
+    // Letters sit on the unshifted layer of every Latin layout, so they imply
+    // nothing on any machine the letter checks above already assume. Symbols
+    // are deliberately not checked here: on the stock French layout `@` and
+    // `[` are only reachable with Option, so their implied modifiers are
+    // legitimately non-empty there.
+    int lettersPlain;
+    foreach (letter; "abcdefghijklmnopqrstuvwxyz")
+    {
+        auto resolved = resolveKeyName([letter].idup);
+        if (!resolved.isNull && !resolved.get().modifiers) lettersPlain++;
+    }
+    check("letters imply no modifiers", lettersPlain == 26);
 
     printf("\nround-tripping\n");
 
