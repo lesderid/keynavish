@@ -70,15 +70,23 @@ void restart()
     else
     {
         import core.stdc.string : strlen;
+        import std.algorithm : endsWith;
         import keynavish.platform.macos.shim : knv_bundle_path;
+
+        auto bundle = knv_bundle_path();
+        auto bundlePath = bundle is null ? null : bundle[0 .. strlen(bundle)].idup;
 
         // Re-exec the bundle rather than the inner binary, so the relaunched
         // process keeps its bundle identity -- and with it the Accessibility
         // grant, which is keyed on bundle id plus signature.
-        auto bundle = knv_bundle_path();
-        if (bundle !is null)
+        //
+        // Only an actual .app, though: an unbundled build (dub run, or
+        // out/keynavish directly) still has a main bundle, whose path is just
+        // the executable's directory, and `open -n` on that would show the
+        // folder in Finder instead of restarting anything.
+        if (bundlePath.endsWith(".app"))
         {
-            spawnProcess(["open", "-n", bundle[0 .. strlen(bundle)].idup]);
+            spawnProcess(["open", "-n", bundlePath]);
         }
         else
         {
