@@ -159,13 +159,19 @@ private dchar translateKeyCode(const(ubyte)* layout, KeyCode keyCode, uint modif
 /// startup and whenever the selected input source changes.
 void buildLayoutMap()
 {
-    charToKeyCode = null;
-    keyCodeToChar = null;
-
     // Fetched once rather than per keycode: this runs 256 translations.
+    //
+    // And fetched before anything is discarded: the input source can briefly
+    // report no layout while a switch is in flight, and clearing first would
+    // then leave empty maps behind -- the binding reload that follows a layout
+    // change would drop every character binding, and with layoutMapBuilt
+    // already set nothing would ever retry. Keeping the last good map is the
+    // better failure.
     auto layout = currentKeyboardLayoutData();
     if (layout is null) return;
 
+    charToKeyCode = null;
+    keyCodeToChar = null;
     layoutMapBuilt = true;
 
     // Layer by layer rather than key by key, so a character reachable unshifted
