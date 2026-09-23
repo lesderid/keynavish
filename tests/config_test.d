@@ -35,8 +35,18 @@ private bool hasBindingFor(string bindingString)
 
     if (combination.isNull) return false;
 
-    return !regularKeyBindings.find!(b => b.keyCombination == combination.get()).empty
-        || !startKeyBindings.find!(b => b.keyCombination == combination.get()).empty;
+    // The whole command sequence has to match, not just the key: otherwise a
+    // check that space runs warp,click 1,end would still pass if space had
+    // been rebound to something else entirely.
+    auto expected = parts[2].parseCommaDelimitedCommands();
+
+    bool matches(KeyBinding b)
+    {
+        return b.keyCombination == combination.get() && b.commands == expected;
+    }
+
+    return !regularKeyBindings.find!matches.empty
+        || !startKeyBindings.find!matches.empty;
 }
 
 void main()
@@ -56,7 +66,7 @@ void main()
           hasBindingFor("h cut-left") && hasBindingFor("j cut-down")
           && hasBindingFor("k cut-up") && hasBindingFor("l cut-right"));
     check("shift+h move key is bound", hasBindingFor("shift+h move-left"));
-    check("space (warp,click,end) is bound", hasBindingFor("space warp"));
+    check("space (warp,click,end) is bound", hasBindingFor("space warp,click 1,end"));
     check("digits 1-3 (click) are bound",
           hasBindingFor("1 click 1") && hasBindingFor("2 click 2") && hasBindingFor("3 click 3"));
 
