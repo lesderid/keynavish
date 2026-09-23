@@ -706,6 +706,18 @@ void knv_dispatch_async(knv_async_callback cb)
     });
 }
 
+// Runs a callback on the main queue after a delay. Separate from the timer
+// below, which is a single repeating slot already owned by the permission poll.
+void knv_dispatch_after(double seconds, knv_async_callback cb)
+{
+    if (!cb) return;
+
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(seconds * NSEC_PER_SEC)),
+                   dispatch_get_main_queue(), ^{
+        cb();
+    });
+}
+
 // ---------------------------------------------------------------------------
 // Timers
 // ---------------------------------------------------------------------------

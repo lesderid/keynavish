@@ -78,6 +78,7 @@ int knv_request_accessibility_permission();
 // Runs a callback on the main queue once the current work completes.
 alias AsyncCallback = extern (C) void function();
 void knv_dispatch_async(AsyncCallback cb);
+void knv_dispatch_after(double seconds, AsyncCallback cb);
 
 // Timers
 alias TimerCallback = extern (C) void function();

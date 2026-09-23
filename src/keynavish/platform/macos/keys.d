@@ -5,6 +5,7 @@ version (OSX):
 import std.typecons : BitFlags, Nullable;
 import keynavish.types;
 import keynavish.platform.macos.coregraphics;
+import keynavish.platform.macos.shim : knv_dispatch_after;
 
 //
 // Key-name resolution.
@@ -156,8 +157,9 @@ private dchar translateKeyCode(const(ubyte)* layout, KeyCode keyCode, uint modif
 }
 
 /// Rebuilds the character map from the active keyboard layout. Called at
-/// startup and whenever the selected input source changes.
-void buildLayoutMap()
+/// startup and whenever the selected input source changes. Returns false, and
+/// leaves the previous map in place, when there was no layout to build from.
+bool buildLayoutMap()
 {
     // Fetched once rather than per keycode: this runs 256 translations.
     //
@@ -168,7 +170,7 @@ void buildLayoutMap()
     // already set nothing would ever retry. Keeping the last good map is the
     // better failure.
     auto layout = currentKeyboardLayoutData();
-    if (layout is null) return;
+    if (layout is null) return false;
 
     charToKeyCode = null;
     keyCodeToChar = null;
@@ -203,6 +205,8 @@ void buildLayoutMap()
             }
         }
     }
+
+    return true;
 }
 
 /// A copy of the active Unicode key layout, falling back to the ASCII-capable
@@ -247,9 +251,41 @@ void rebuildForLayoutChange()
 {
     import keynavish.commands : reloadAllKeyBindings;
 
-    buildLayoutMap();
+    if (!buildLayoutMap())
+    {
+        // Keeping the last good map is only half of surviving a switch that
+        // is still in flight: its notification has already been delivered, so
+        // nothing else would ever rebuild, and the bindings would stay on the
+        // previous layout until the user happened to switch again. Retried a
+        // bounded number of times; a layout that never appears keeps the
+        // previous map for good. The bindings are left alone until then --
+        // they still match the map that was kept.
+        if (layoutRetries < layoutRetryLimit)
+        {
+            layoutRetries++;
+            knv_dispatch_after(layoutRetryDelaySeconds, &layoutRetryCallback);
+        }
+        return;
+    }
 
+    layoutRetries = 0;
     reloadAllKeyBindings();
+}
+
+/// A switch that is merely in flight settles well within this.
+private enum layoutRetryLimit = 8;
+private enum layoutRetryDelaySeconds = 0.25;
+private int layoutRetries;
+
+private extern (C) void layoutRetryCallback() nothrow
+{
+    try
+    {
+        rebuildForLayoutChange();
+    }
+    catch (Throwable)
+    {
+    }
 }
 
 /// The character the given keycode produces unshifted on the active layout, or
