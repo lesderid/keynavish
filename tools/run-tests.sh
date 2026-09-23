@@ -15,7 +15,7 @@ ROOT=$(dirname "$SCRIPT_DIR")
 cd "$ROOT"
 mkdir -p build
 
-TESTS="${*:-config grid keys render}"
+TESTS="${*:-click config grid keys render}"
 
 case "$(uname -s)" in
 Darwin)

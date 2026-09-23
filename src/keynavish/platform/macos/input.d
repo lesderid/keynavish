@@ -2,6 +2,7 @@ module keynavish.platform.macos.input;
 
 version (OSX):
 
+import core.time : Duration, MonoTime;
 import std.typecons : BitFlags, Nullable;
 import keynavish;
 import keynavish.types;
@@ -392,6 +393,86 @@ private CGEventType draggedEventType(int button)
     }
 }
 
+//
+// Click counting.
+//
+// A real mouse gets this for free: the window server counts clicks and fills in
+// kCGMouseEventClickState, which is what an application reads to tell a double
+// click from two single clicks. It does not do that for synthesised events --
+// they carry whatever the sender puts in the field -- so `click 1` twice in
+// quick succession looked like two unrelated single clicks no matter how fast
+// the two commands ran, and text never selected the way it does with a physical
+// double click. Windows needs none of this: it derives the double click from
+// the event stream itself.
+//
+
+/// How far the cursor may move between two clicks and still continue the count.
+/// Small enough that two different grid cells never count as a double click,
+/// large enough to absorb the rounding between a warp target and the position
+/// the window server reports back.
+private enum clickSlop = 3;
+
+struct ClickCount
+{
+    int state;
+    int button;
+    Point position;
+    MonoTime time;
+}
+
+private ClickCount lastClick;
+
+/// The clickState for a click of `button` at `position`, continuing the run in
+/// `last` when it lands soon enough and close enough, and starting a new one at
+/// 1 otherwise. Updates `last` for the click that follows.
+///
+/// `now` and `interval` are parameters rather than read here so this can be
+/// tested without waiting out a real double-click interval.
+int advanceClickCount(ref ClickCount last, int button, Point position,
+                      MonoTime now, Duration interval)
+{
+    import std.math : abs;
+
+    auto continues = last.state > 0
+        && button == last.button
+        && now - last.time <= interval
+        && abs(position.x - last.position.x) <= clickSlop
+        && abs(position.y - last.position.y) <= clickSlop;
+
+    last.state = continues ? last.state + 1 : 1;
+    last.button = button;
+    last.position = position;
+    last.time = now;
+
+    return last.state;
+}
+
+/// The double-click interval the user has set, falling back to the macOS
+/// default if the system reports something unusable.
+private Duration doubleClickInterval()
+{
+    import core.time : dur;
+
+    auto seconds = knv_double_click_interval();
+
+    if (!(seconds > 0)) return dur!"msecs"(500);
+
+    return dur!"usecs"(cast(long)(seconds * 1_000_000));
+}
+
+private int nextClickState(int button, Point position)
+{
+    return advanceClickCount(lastClick, button, position,
+                             MonoTime.currTime, doubleClickInterval());
+}
+
+/// Records a click run the caller counted itself, so whatever comes next
+/// continues from it.
+private void recordClickCount(int button, Point position, int state)
+{
+    lastClick = ClickCount(state, button, position, MonoTime.currTime);
+}
+
 private void postMouseEvent(CGEventType type, Point position, int button, int clickState = 0)
 {
     auto event = CGEventCreateMouseEvent(null, type,
@@ -435,15 +516,16 @@ void mouseClick(int button, long delayMilliseconds)
     }
 
     auto position = clickPosition();
+    auto clickState = nextClickState(button, position);
 
-    postMouseEvent(downEventType(button), position, button, 1);
+    postMouseEvent(downEventType(button), position, button, clickState);
 
     if (delayMilliseconds > 0)
     {
         Thread.sleep(dur!"msecs"(delayMilliseconds));
     }
 
-    postMouseEvent(upEventType(button), position, button, 1);
+    postMouseEvent(upEventType(button), position, button, clickState);
 }
 
 void mouseDoubleClick(int button, long delayMilliseconds)
@@ -453,6 +535,9 @@ void mouseDoubleClick(int button, long delayMilliseconds)
 
     auto position = clickPosition();
 
+    // Counted here rather than through nextClickState: `doubleclick` means a
+    // double click whatever the timing, including under an x-set-delay longer
+    // than the system's own interval.
     foreach (clickState; 1 .. 3)
     {
         postMouseEvent(downEventType(button), position, button, clickState);
@@ -464,6 +549,8 @@ void mouseDoubleClick(int button, long delayMilliseconds)
 
         postMouseEvent(upEventType(button), position, button, clickState);
     }
+
+    recordClickCount(button, position, 2);
 }
 
 void scrollWheel(int lines)
@@ -479,6 +566,9 @@ void scrollWheel(int lines)
 void mouseDragToggle(int button, BitFlags!ModifierKey modifiers)
 {
     auto position = clickPosition();
+
+    // A drag is its own gesture: a click after it starts a fresh count.
+    lastClick = ClickCount.init;
 
     if (draggingButton.isNull)
     {

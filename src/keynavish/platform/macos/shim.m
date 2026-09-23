@@ -467,6 +467,17 @@ void knv_alert_warning(const char *message) { knv_alert(message, NSAlertStyleWar
 void knv_alert_info(const char *message)    { knv_alert(message, NSAlertStyleInformational); }
 
 // ---------------------------------------------------------------------------
+// Mouse
+// ---------------------------------------------------------------------------
+
+// The interval within which two clicks count as a double click, in seconds, as
+// the user has it set in System Settings.
+double knv_double_click_interval(void)
+{
+    return [NSEvent doubleClickInterval];
+}
+
+// ---------------------------------------------------------------------------
 // Opening files and URLs
 // ---------------------------------------------------------------------------
 
