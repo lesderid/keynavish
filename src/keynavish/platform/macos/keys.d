@@ -249,6 +249,15 @@ private ubyte[] currentKeyboardLayoutData()
 /// keycodes, so they would keep pointing at the previous layout's physical keys.
 void rebuildForLayoutChange()
 {
+    // A new notification is a new switch, so it gets the full retry budget
+    // even if an earlier switch used it all up.
+    layoutRetries = 0;
+
+    attemptLayoutRebuild();
+}
+
+private void attemptLayoutRebuild()
+{
     import keynavish.commands : reloadAllKeyBindings;
 
     if (!buildLayoutMap())
@@ -258,8 +267,8 @@ void rebuildForLayoutChange()
         // nothing else would ever rebuild, and the bindings would stay on the
         // previous layout until the user happened to switch again. Retried a
         // bounded number of times; a layout that never appears keeps the
-        // previous map for good. The bindings are left alone until then --
-        // they still match the map that was kept.
+        // previous map until the next switch. The bindings are left alone
+        // until then -- they still match the map that was kept.
         if (layoutRetries < layoutRetryLimit)
         {
             layoutRetries++;
@@ -281,7 +290,7 @@ private extern (C) void layoutRetryCallback() nothrow
 {
     try
     {
-        rebuildForLayoutChange();
+        attemptLayoutRebuild();
     }
     catch (Throwable)
     {
