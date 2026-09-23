@@ -167,9 +167,23 @@ private extern (C) CGEventRef tapCallback(CGEventTapProxy proxy, CGEventType typ
             return null;
         }
     }
-    catch (Throwable)
+    catch (Throwable t)
     {
-        // Never let an exception escape into CoreGraphics; pass the key through.
+        // Never let an exception escape into CoreGraphics -- but don't swallow
+        // it either. What throws here is a user command failing, such as a
+        // shell command that cannot spawn or a config that cannot be read, and
+        // without this the binding would silently do nothing. Windows reports
+        // these too, through the exception wrapper on its hook. showError
+        // defers onto the main queue, so it is safe to call from the tap.
+        try
+        {
+            import std.exception : assumeWontThrow;
+
+            showError("Command failed: " ~ t.message.assumeWontThrow.idup);
+        }
+        catch (Throwable)
+        {
+        }
     }
 
     return event;
