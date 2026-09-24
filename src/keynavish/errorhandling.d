@@ -2,51 +2,118 @@ module keynavish.errorhandling;
 
 import keynavish;
 
-void showError(Stringish)(Stringish message)
+version (Windows)
 {
-    import core.sys.windows.windows : MessageBox, MB_ICONERROR;
-    import std.utf : toUTF16z;
+    void showError(Stringish)(Stringish message)
+    {
+        import core.sys.windows.windows : MessageBox, MB_ICONERROR;
+        import std.utf : toUTF16z;
 
-    MessageBox(null, message.toUTF16z, programName.ptr, MB_ICONERROR);
+        MessageBox(null, message.toUTF16z, programName.ptr, MB_ICONERROR);
+    }
+
+    void showWarning(Stringish)(Stringish message)
+    {
+        import core.sys.windows.windows : MessageBox, MB_ICONWARNING;
+        import std.utf : toUTF16z;
+
+        MessageBox(null, message.toUTF16z, programName.ptr, MB_ICONWARNING);
+    }
+
+    void showInfo(Stringish)(Stringish message)
+    {
+        import core.sys.windows.windows : MessageBox, MB_ICONINFORMATION;
+        import std.utf : toUTF16z;
+
+        MessageBox(null, message.toUTF16z, programName.ptr, MB_ICONINFORMATION);
+    }
 }
-
-void showWarning(Stringish)(Stringish message)
+else
 {
-    import core.sys.windows.windows : MessageBox, MB_ICONWARNING;
-    import std.utf : toUTF16z;
+    //
+    // NSAlert, presented asynchronously on the main queue by the shim: several
+    // of these are reachable from inside the CGEventTap callback, and blocking
+    // the run loop there gets the tap disabled by timeout.
+    //
 
-    MessageBox(null, message.toUTF16z, programName.ptr, MB_ICONWARNING);
-}
+    private const(char)* cstring(Stringish)(Stringish message)
+    {
+        import std.conv : to;
+        import std.string : toStringz;
 
-void showInfo(Stringish)(Stringish message)
-{
-    import core.sys.windows.windows : MessageBox, MB_ICONINFORMATION;
-    import std.utf : toUTF16z;
+        return message.to!string.toStringz;
+    }
 
-    MessageBox(null, message.toUTF16z, programName.ptr, MB_ICONINFORMATION);
+    void showError(Stringish)(Stringish message)
+    {
+        import keynavish.platform.macos.shim : knv_alert_error;
+
+        knv_alert_error(message.cstring);
+    }
+
+    void showWarning(Stringish)(Stringish message)
+    {
+        import keynavish.platform.macos.shim : knv_alert_warning;
+
+        knv_alert_warning(message.cstring);
+    }
+
+    void showInfo(Stringish)(Stringish message)
+    {
+        import keynavish.platform.macos.shim : knv_alert_info;
+
+        knv_alert_info(message.cstring);
+    }
 }
 
 template exceptionHandlerWrapper(alias func)
 {
     import std.traits;
     import std.exception;
-    import std.utf : toUTF16z;
-    import core.sys.windows.windows : MessageBox, MB_ICONERROR, MB_SYSTEMMODAL;
 
-    extern(Windows)
-    ReturnType!func exceptionHandlerWrapper(Parameters!func args) nothrow @system
+    version (Windows)
     {
-        try
+        import std.utf : toUTF16z;
+        import core.sys.windows.windows : MessageBox, MB_ICONERROR, MB_SYSTEMMODAL;
+
+        extern(Windows)
+        ReturnType!func exceptionHandlerWrapper(Parameters!func args) nothrow @system
         {
-            return func(args);
+            try
+            {
+                return func(args);
+            }
+            catch(Throwable t)
+            {
+                auto message = "Unhandled exception: " ~ t.message.assumeWontThrow ~ "\r\n\r\n" ~ unhandledExceptionMessage;
+
+                MessageBox(null, message.toUTF16z, programName.ptr, MB_ICONERROR | MB_SYSTEMMODAL).assumeWontThrow;
+
+                assert(0);
+            }
         }
-        catch(Throwable t)
+    }
+    else
+    {
+        extern(C)
+        ReturnType!func exceptionHandlerWrapper(Parameters!func args) nothrow @system
         {
-            auto message = "Unhandled exception: " ~ t.message.assumeWontThrow ~ "\r\n\r\n" ~ unhandledExceptionMessage;
+            try
+            {
+                return func(args);
+            }
+            catch(Throwable t)
+            {
+                import core.stdc.stdio : fprintf, stderr;
+                import std.string : toStringz;
 
-            MessageBox(null, message.toUTF16z, programName.ptr, MB_ICONERROR | MB_SYSTEMMODAL).assumeWontThrow;
+                auto message = ("Unhandled exception: " ~ t.message.assumeWontThrow ~ "\n\n" ~ unhandledExceptionMessage).assumeWontThrow;
 
-            assert(0);
+                fprintf(stderr, "%s\n", message.toStringz.assumeWontThrow);
+                showError(message).assumeWontThrow;
+
+                assert(0);
+            }
         }
     }
 }

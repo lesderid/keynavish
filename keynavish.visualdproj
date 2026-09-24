@@ -510,10 +510,29 @@
     <File path="src\keynavish\helpers.d" />
     <File path="src\keynavish\keyboardinput.d" />
     <File path="src\keynavish\main.d" />
-    <File path="src\keynavish\notifyicon.d" />
     <File path="src\keynavish\package.d" />
     <File path="src\keynavish\recording.d" />
-    <File path="src\keynavish\window.d" />
+    <File path="src\keynavish\types.d" />
+    <Folder name="platform">
+     <File path="src\keynavish\platform\package.d" />
+     <Folder name="windows">
+      <File path="src\keynavish\platform\windows\display.d" />
+      <File path="src\keynavish\platform\windows\input.d" />
+      <File path="src\keynavish\platform\windows\keys.d" />
+      <File path="src\keynavish\platform\windows\overlay.d" />
+      <File path="src\keynavish\platform\windows\trayicon.d" />
+     </Folder>
+     <Folder name="macos">
+      <File path="src\keynavish\platform\macos\coregraphics.d" />
+      <File path="src\keynavish\platform\macos\coretext.d" />
+      <File path="src\keynavish\platform\macos\display.d" />
+      <File path="src\keynavish\platform\macos\input.d" />
+      <File path="src\keynavish\platform\macos\keys.d" />
+      <File path="src\keynavish\platform\macos\overlay.d" />
+      <File path="src\keynavish\platform\macos\shim.d" />
+      <File path="src\keynavish\platform\macos\statusitem.d" />
+     </Folder>
+    </Folder>
    </Folder>
   </Folder>
  </Folder>
