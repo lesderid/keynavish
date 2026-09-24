@@ -138,24 +138,26 @@ with the supplied solution file is recommended.
 ### macOS
 
 Install [LDC](https://github.com/ldc-developers/ldc) and
-[dub](https://dub.pm/), then run:
+[dub](https://dub.pm/), then run `dub build`. This builds the binary for
+your machine's architecture, assembles `out/keynavish.app`, and signs it.
+DMD cannot be used: it has no native arm64 macOS backend.
+
+For a universal (arm64 + x86_64) build, run:
 
 ```
 tools/build-macos.sh
 ```
 
-This builds the binary, assembles `out/keynavish.app`, and signs it. DMD
-cannot be used: it has no native arm64 macOS backend.
+This needs the official `ldc2-*-osx-universal` release rather than the
+Homebrew package, which ships arm64-only runtime libraries. The script
+detects this and tells you.
 
-For a universal (arm64 + x86_64) build you need the official
-`ldc2-*-osx-universal` release rather than the Homebrew package, which
-ships arm64-only runtime libraries. The script detects this and tells you.
-
-To keep macOS from revoking keynavish's Accessibility permission on every
-rebuild, sign with a stable certificate rather than ad-hoc:
+Every build re-signs the bundle. To keep macOS from revoking keynavish's
+Accessibility permission each time, sign with a stable certificate rather
+than ad-hoc:
 
 ```
-KEYNAVISH_SIGN_IDENTITY="Your Certificate Name" tools/build-macos.sh
+KEYNAVISH_SIGN_IDENTITY="Your Certificate Name" dub build
 ```
 
 Run the test suites with:

@@ -74,7 +74,8 @@ esac
 BUILT=""
 for arch in $SLICES; do
 	echo "==> building $arch"
-	dub build --compiler=ldc2 --build="$BUILD_TYPE" --arch="$arch-apple-macos13" --force
+	# Each slice is bundled once, below, after lipo -- not per architecture.
+	KEYNAVISH_SKIP_BUNDLE=1 dub build --compiler=ldc2 --build="$BUILD_TYPE" --arch="$arch-apple-macos13" --force
 	mv out/keynavish "build/keynavish-$arch"
 	BUILT="$BUILT build/keynavish-$arch"
 done

@@ -34,3 +34,9 @@ lflags "-framework" "ServiceManagement" platform="osx"
 lflags "-framework" "ApplicationServices" platform="osx"
 lflags "-framework" "Carbon" platform="osx"
 lflags "-framework" "IOKit" platform="osx"
+
+// On macOS the .app is the real build product: outside a bundle there is no
+// bundle identity to hold the Accessibility grant and no bundled default
+// config. tools/build-macos.sh skips this for its per-architecture builds and
+// bundles the universal binary once at the end.
+postBuildCommands "[ -n \"$$KEYNAVISH_SKIP_BUNDLE\" ] || ./tools/make-bundle.sh \"$$DUB_TARGET_PATH/$$DUB_TARGET_NAME\" \"$$DUB_TARGET_PATH\"" platform="osx"
