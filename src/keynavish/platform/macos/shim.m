@@ -354,6 +354,10 @@ void knv_overlay_create(int count, const double *rects)
             window.backgroundColor = [NSColor clearColor];
             window.hasShadow = NO;
 
+            // Appear and disappear instantly. With the system's window
+            // animations enabled, the default behaviour zooms the grid in.
+            window.animationBehavior = NSWindowAnimationBehaviorNone;
+
             // Never take input: keynavish's overlay is purely decorative, all
             // interaction goes through the event tap.
             window.ignoresMouseEvents = YES;
